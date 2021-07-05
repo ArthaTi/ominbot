@@ -22,6 +22,9 @@ void main() {
 
     writefln!"Corpus loaded in %s"(Clock.currTime - time);
 
+    // Start from a random event
+    bot.runRandomEvent().writeln;
+
     char[] input;
 
     while (true) {

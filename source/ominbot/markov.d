@@ -1,5 +1,7 @@
 module ominbot.markov;
 
+import std.uni;
+import std.conv;
 import std.math;
 import std.array;
 import std.stdio;
@@ -78,7 +80,7 @@ string generate(ref MarkovModel model, int humor, string[] context = []) {
     while (output.length < MinWords || output.length <= uniform(0, MaxWords)) {
 
         // The more emotional, the higher should be the chance
-        if (abs(humor) > uniform(0, HumorLimit * 4)) {
+        if (abs(humor) > uniform(0, HumorLimit * 2)) {
 
             // Pick a random word
             output ~= randomWord();
@@ -126,7 +128,52 @@ string generate(ref MarkovModel model, int humor, string[] context = []) {
 
     }
 
-    return output.join(" ");
+    return output.amplify(humor).join(" ");
+
+}
+
+// Add
+private string[] amplify(bool recursive = false, T)(T input, int humor)
+if (isInputRange!T) {
+
+    string[] result;
+
+    bool excl;
+    int emotional = abs(humor);
+
+    foreach (i, word; input) {
+
+        // Capitalize first word, unless sad
+        if (i == 0 && humor > -HumorLimit/3) word = word.asCapitalized.to!string;
+
+        result ~= "";
+
+        const scream = uniform(HumorLimit/3, HumorLimit * 3/2) <= emotional;
+        const scramble = uniform(2, 10);
+
+        // Add letter by letter
+        foreach (letter; word) {
+
+            // Found an exclamation mark
+            if (letter == '!') excl = true;
+
+            // Screaming!
+            else if (scream && uniform(0, 5) <= scramble) {
+
+                result[$-1] ~= letter.toUpper;
+
+            }
+
+            else result[$-1] ~= letter;
+
+        }
+
+    }
+
+    // AMPLIFY FURTHER!
+    if (excl && recursive) return amplify!false(result, humor);
+
+    return result;
 
 }
 

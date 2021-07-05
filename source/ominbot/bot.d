@@ -107,9 +107,13 @@ struct Ominbot {
                     pushWord();
                     break;
 
+                // Question/exclamation mark, add to word and end sentence
+                case '?', '!', '‽':
+                    key ~= ch;
+
                 // End of sentence
                 case '\n':
-                case '.', ',', '?', '!':
+                case '.', ',':
 
                     pushSentence();
                     break;
