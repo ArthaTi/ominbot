@@ -2,8 +2,10 @@ module ominbot.discord;
 
 import dcord.core;
 import vibe.core.core;
+import vibe.inet.urltransfer;
 
 import std.stdio;
+import std.format;
 import std.random;
 import std.algorithm;
 
@@ -82,6 +84,25 @@ class OminbotPlugin : Plugin {
             forceSend = true;
 
         });
+
+        // If there is a png attached
+        foreach (attachment; event.message.attachments) {
+
+            // Only fetch pngs
+            if (!attachment.filename.endsWith(".png")) continue;
+
+            // Make sure it's at least somewhat usable
+            if (attachment.width < 300 || attachment.height < 300) continue;
+
+            // And not too big
+            if (attachment.width > 1500 || attachment.height > 1500) continue;
+
+            // Download the image
+            download(attachment.url, format!"resources/bot-%s.png"(attachment.id));
+
+            writefln!"downloaded image %s id %s"(attachment.filename, attachment.id);
+
+        }
 
         writefln!"MessageCreate(%+3s): %s"(bot.humor, event.message);
 
