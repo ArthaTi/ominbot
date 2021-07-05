@@ -6,6 +6,8 @@ import std.datetime;
 import std.file : readText;
 
 import ominbot.bot;
+import ominbot.params;
+import ominbot.random_event;
 
 void main() {
 
@@ -35,6 +37,20 @@ void main() {
 
         // Respond
         bot.statusUpdate(inputString).writeln();
+
+        // If 5 or more minutes passed
+        if (Clock.currTime > time + RandomEventFrequency) {
+
+            // Run a random event
+            auto result = bot.runRandomEvent;
+
+            // Update the time
+            time = Clock.currTime;
+
+            // Output the result
+            if (result.length) writeln(result);
+
+        }
 
     }
 

@@ -3,6 +3,7 @@ module ominbot.bot;
 import std.conv;
 import std.array;
 import std.ascii;
+import std.range;
 import std.string;
 import std.algorithm;
 
@@ -10,45 +11,9 @@ import ominbot.markov;
 import ominbot.params;
 import ominbot.word_lists;
 
-private struct LimitInt(int min, int max) {
-
-    // Note: does not handle overflows
-
-    int value;
-    alias value this;
-
-    void opAssign(int other) {
-
-        value = clamp(other, min, max);
-
-    }
-
-    void opOpAssign(string op : "+")(int other) {
-
-        this = value + other;
-
-    }
-
-    void opOpAssign(string op : "-")(int other) {
-
-        this = value - other;
-
-    }
-
-    unittest {
-
-        LimitInt!(-3, 3) myInt;
-        myInt += 30;
-        assert(myInt == 3);
-
-    }
-
-}
-
 struct Ominbot {
 
     MarkovModel model;
-
     LimitInt!(-HumorLimit, HumorLimit) humor;
 
     /// Load data into the bot.
@@ -95,7 +60,10 @@ struct Ominbot {
 
         void pushWord() {
 
+            string marks;
+
             key = key
+                .tee!(a => marks ~= "?!‽".canFind(a) ? a.to!string : "")
                 .filter!isAlphaNum
                 .to!string
                 .toLower;
@@ -106,6 +74,9 @@ struct Ominbot {
 
             // Update sentiment
             inputSentiment += word.sentiment;
+
+            // Add marks
+            word.word ~= marks;
 
             // Collect nouns
             if (word.noun) nouns ~= word;
@@ -155,6 +126,41 @@ struct Ominbot {
         humor += inputSentiment;
 
         return nouns;
+
+    }
+
+}
+
+private struct LimitInt(int min, int max) {
+
+    // Note: does not handle overflows
+
+    int value;
+    alias value this;
+
+    void opAssign(int other) {
+
+        value = clamp(other, min, max);
+
+    }
+
+    void opOpAssign(string op : "+")(int other) {
+
+        this = value + other;
+
+    }
+
+    void opOpAssign(string op : "-")(int other) {
+
+        this = value - other;
+
+    }
+
+    unittest {
+
+        LimitInt!(-3, 3) myInt;
+        myInt += 30;
+        assert(myInt == 3);
 
     }
 

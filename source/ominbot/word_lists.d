@@ -104,7 +104,7 @@ struct WordList {
     }
 
     /// Get the type of the given word.
-    inout(Word) opBinary(string op : "in")(string word) inout {
+    Word opBinary(string op : "in")(string word) inout {
 
         return words.get(word, cast(inout) Word(word, 0, false));
 

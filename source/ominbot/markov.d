@@ -57,7 +57,7 @@ string generate(ref MarkovModel model, int humor, string[] context = []) {
 
     string[] output;
 
-    auto entry = (context.length && uniform(0, 1))
+    auto entry = (context.length && uniform(0, 2))
         ? model.get(context.choice, model[""])
         : model[""];
 
@@ -67,15 +67,21 @@ string generate(ref MarkovModel model, int humor, string[] context = []) {
 
     }
 
+    string randomWord() {
+
+        if     (humor >= 0) return list.positive[].choice;
+        else if (humor < 0) return list.negative[].choice;
+        else assert(false);
+
+    }
+
     while (output.length < MinWords || output.length <= uniform(0, MaxWords)) {
 
         // The more emotional, the higher should be the chance
         if (abs(humor) > uniform(0, HumorLimit * 4)) {
 
             // Pick a random word
-            if (humor > 0)      output ~= list.positive[].choice;
-            else if (humor < 0) output ~= list.negative[].choice;
-            else assert(false);
+            output ~= randomWord();
 
         }
 
@@ -108,6 +114,15 @@ string generate(ref MarkovModel model, int humor, string[] context = []) {
             }
 
         }
+
+        // Found no words, try to use a random word
+        else if (auto part = randomWord() in model) {
+
+            entry = *part;
+
+        }
+
+        else break;
 
     }
 
