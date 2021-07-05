@@ -87,17 +87,21 @@ struct WordList {
                         ? sentiment
                         : old.sentiment;
 
+                    noun = old.noun || noun;
+
                     return Word(text, newType, old.noun || noun);
 
                 }
 
             );
-            if (noun || text !in words) words[text] = Word(text, sentiment, noun);
-
 
             // Insert the word into typing arrays
-            if (sentiment > 0) positive ~= text;
-            else if (sentiment < 0) negative ~= text;
+            if (noun) {
+
+                if (sentiment > 0) positive ~= text;
+                else if (sentiment < 0) negative ~= text;
+
+            }
 
         }
 

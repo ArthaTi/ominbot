@@ -4,11 +4,12 @@
 	],
 	"copyright": "Copyright © 2021, Soaku",
 	"dependencies": {
+		"dcord": ">=0.0.0",
 		"rcdata": ">=1.0.0-alpha.2 <1.1.0-0"
 	},
 	"description": "ominious bot",
 	"license": "GPL-3.0",
 	"name": "ominbot",
-	"targetType": "executable",
-	"targetPath": "build"
+	"targetPath": "build",
+	"targetType": "executable"
 }

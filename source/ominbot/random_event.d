@@ -3,6 +3,7 @@ module ominbot.random_event;
 import std.random;
 
 import ominbot.bot;
+import ominbot.params;
 
 alias RandomEvent = string function(ref Ominbot);
 
@@ -20,6 +21,11 @@ immutable RandomEvent[] events = [
 
     (ref bot) {
         return bot.statusUpdate();
+    },
+
+    (ref bot) {
+        bot.replyRarity = BoostedReplyRarity;
+        return "";
     },
 
 ];

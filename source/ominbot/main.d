@@ -1,5 +1,8 @@
 module ominbot.main;
 
+import dcord.core;
+import vibe.core.core;
+
 import std.conv;
 import std.stdio;
 import std.datetime;
@@ -7,13 +10,14 @@ import std.file : readText;
 
 import ominbot.bot;
 import ominbot.params;
+import ominbot.discord;
 import ominbot.random_event;
 
-void main() {
+void main(string[] args) {
 
     Ominbot bot;
 
-    auto time = Clock.currTime;
+    const time = Clock.currTime;
 
     writefln!"Loading corpus...";
 
@@ -22,9 +26,26 @@ void main() {
 
     writefln!"Corpus loaded in %s"(Clock.currTime - time);
 
-    // Start from a random event
-    bot.runRandomEvent().writeln;
+    bot.launchDiscord(args[1]);
 
+}
+
+void launchDiscord(ref Ominbot bot, string token) {
+
+    BotConfig config;
+    config.token = token;
+    config.cmdPrefix = "";
+
+    Bot dscBot = new Bot(config, LogLevel.trace);
+    dscBot.loadPlugin(new OminbotPlugin(bot));
+    dscBot.run();
+    runEventLoop();
+
+}
+
+void launchCLI(ref Ominbot bot) {
+
+    auto time = Clock.currTime;
     char[] input;
 
     while (true) {

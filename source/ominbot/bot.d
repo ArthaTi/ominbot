@@ -16,6 +16,8 @@ struct Ominbot {
     MarkovModel model;
     LimitInt!(-HumorLimit, HumorLimit) humor;
 
+    int replyRarity = InitialReplyRarity;
+
     /// Load data into the bot.
     void load(const string data) {
 
@@ -24,12 +26,12 @@ struct Ominbot {
     }
 
     /// Load data into the bot and save it for future.
-    void feed(const string data) {
+    void feed(const string data, void delegate(ulong) pinged = null) {
 
         import std.file : append;
 
         // Feed the model
-        load(data);
+        model.feed(getNouns!3(data, pinged));
 
         // Add to corpus
         append("resources/bot-corpus.txt", data.strip ~ "\n");
@@ -40,7 +42,7 @@ struct Ominbot {
     string statusUpdate(string context = "") {
 
         auto words = context.length
-            ?  getNouns!3(context)
+            ?  getNouns(context)
                 .map!"a.word"
                 .array
             : [];
@@ -49,7 +51,7 @@ struct Ominbot {
 
     }
 
-    private Word[] getNouns(int sentimentLimit = 0)(string data) {
+    private Word[] getNouns(int sentimentLimit = 0)(string data, void delegate(ulong) pinged = null) {
 
         const list = getWordList();
 
@@ -62,7 +64,20 @@ struct Ominbot {
 
             string marks;
 
-            key = key
+            // Allow pings
+            if (auto id = isPing(key)) {
+
+                // Trigger the signal if pinged
+                if (pinged) pinged(id);
+
+                nouns ~= Word(key, 0, false);
+
+                return;
+
+            }
+
+            // Regular words
+            else key = key
                 .tee!(a => marks ~= "?!‽".canFind(a) ? a.to!string : "")
                 .filter!isAlphaNum
                 .to!string
@@ -111,6 +126,9 @@ struct Ominbot {
                 case '?', '!', '‽':
                     key ~= ch;
 
+                    // Ping! don't end yet
+                    if (key == "<@!") break;
+
                 // End of sentence
                 case '\n':
                 case '.', ',':
@@ -130,6 +148,24 @@ struct Ominbot {
         humor += inputSentiment;
 
         return nouns;
+
+    }
+
+    private ulong isPing(string text) const {
+
+        string inner = text
+            .chompPrefix("<@")
+            .chompPrefix("!")
+            .chomp(">");
+
+        // Check if all the characters were removed
+        const removed = text.length - inner.length;
+
+        if (removed != 3 && removed != 4) return 0;
+
+        // Check if it holds a number
+        try return inner.to!ulong;
+        catch (ConvException) return 0;
 
     }
 
