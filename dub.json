@@ -5,6 +5,7 @@
 	"copyright": "Copyright © 2021, Soaku",
 	"dependencies": {
 		"dcord": ">=0.0.0",
+		"dlib": "~>0.22.0",
 		"rcdata": ">=1.0.0-alpha.2 <1.1.0-0"
 	},
 	"description": "ominious bot",

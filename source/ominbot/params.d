@@ -12,3 +12,5 @@ enum RandomEventFrequency = 5.minutes;
 // Note: lower values give a higher chance.
 enum InitialReplyRarity = 50;
 enum BoostedReplyRarity = 10;
+
+enum ImagePostingChance = 3;

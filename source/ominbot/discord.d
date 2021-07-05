@@ -10,6 +10,7 @@ import std.random;
 import std.algorithm;
 
 import ominbot.bot;
+import ominbot.image;
 import ominbot.params;
 import ominbot.random_event;
 
@@ -112,11 +113,23 @@ class OminbotPlugin : Plugin {
             // Boost reply chance
             bot.replyRarity = BoostedReplyRarity;
 
-            // Get a message
-            const result = bot.statusUpdate(event.message.content);
+            // Give a chance to post an image
+            if (uniform(0, ImagePostingChance) == 0) {
 
-            // Post a reply
-            event.message.reply(result);
+                mutilateImage(*bot);
+
+            }
+
+            // Post text instead
+            else {
+
+                // Get a message
+                const result = bot.statusUpdate(event.message.content);
+
+                // Post a reply
+                event.message.reply(result);
+
+            }
 
         }
 
