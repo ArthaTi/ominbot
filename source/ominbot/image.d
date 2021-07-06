@@ -75,19 +75,19 @@ shared static this() {
         'Y': BC(1005, 0, 41),
         'Z': BC(1045, 0, 34),
 
-        '0': BC(   8, 162, 40),
-        '1': BC(  49, 162, 32),
-        '2': BC(  85, 162, 39),
-        '3': BC( 126, 162, 40),
-        '4': BC( 167, 162, 42),
-        '5': BC( 210, 162, 40),
-        '6': BC( 253, 162, 41),
-        '7': BC( 294, 162, 34),
-        '8': BC( 331, 162, 38),
-        '9': BC( 373, 162, 41),
-        '-': BC( 459, 162, 27),
-        '!': BC( 488, 162, 25),
-        '?': BC( 516, 162, 39),
+        '0': BC(   2, 144, 40),
+        '1': BC(  43, 144, 32),
+        '2': BC(  79, 144, 39),
+        '3': BC( 120, 144, 40),
+        '4': BC( 161, 144, 42),
+        '5': BC( 204, 144, 40),
+        '6': BC( 247, 144, 41),
+        '7': BC( 288, 144, 34),
+        '8': BC( 325, 144, 38),
+        '9': BC( 367, 144, 41),
+        '-': BC( 453, 144, 27),
+        '!': BC( 482, 144, 25),
+        '?': BC( 510, 144, 39),
 
     ];
 
@@ -96,6 +96,12 @@ shared static this() {
 /// Mutilate an image.
 /// Returns: True if done.
 bool mutilateImage(ref Ominbot bot) {
+
+    return mutilateImage(bot.statusUpdate, bot.statusUpdate);
+
+}
+
+bool mutilateImage(string[] top, string[] bottom) {
 
     if (fontBitmap is null) {
 
@@ -117,11 +123,9 @@ bool mutilateImage(ref Ominbot bot) {
 
     auto image = loadImage(imagePath);
 
-    writefln!"first image color: %s"(image[0, 0]);
-
     // Add text
-    image.addText(bot.statusUpdate, 0);
-    image.addText(bot.statusUpdate, image.height - textHeight);
+    image.addText(top, 0);
+    image.addText(bottom, image.height - textHeight);
 
     // Save
     image.savePNG(ImageOutputPath);
@@ -132,10 +136,14 @@ bool mutilateImage(ref Ominbot bot) {
 
 }
 
+unittest {
+
+    mutilateImage(["abcdef?!"], ["1234567890"]);
+
+}
+
 /// Add text to given image in place.
 void addText(SuperImage a, string[] words, uint offsetY) {
-
-    writefln!"adding text %s"(words);
 
     foreach (line; spreadText(words, a.width)) {
 
@@ -147,14 +155,12 @@ void addText(SuperImage a, string[] words, uint offsetY) {
             - spaceWidth;
 
         // Make sure the text is centered
-        auto position = (a.width - lineWidth) / 2;
+        auto position = (cast(int) a.width - lineWidth) / 2;
 
         // Generate the line
         foreach (word; line) {
 
             scope (exit) position += spaceWidth;
-
-            writefln!"    word at %s, %s"(position, offsetY);
 
             foreach (letter; word.characters) {
 
@@ -178,8 +184,6 @@ private const(WordData)[][] spreadText(string[] words, uint imageWidth) {
     const(WordData)[][] lines = [[]];
 
     uint lineWidth;
-
-    writefln!"spreading text %s over %s pixels width"(words, imageWidth);
 
     // Calculate
     foreach (word; words) {
@@ -231,17 +235,19 @@ private WordData wordData(string word) {
 /// Combine two images. Modifies the first image in place.
 private void addImage(SuperImage a, ImageRegion b, uint offsetX, uint offsetY) {
 
-    foreach (y; offsetY .. offsetY + b.height) {
+    foreach (y; 0 .. b.height) {
 
-        if (y >= a.height) break;
+        auto ay = y + offsetY;
+        if (ay >= a.height) break;
 
-        foreach (x; offsetX .. offsetX + b.width) {
+        foreach (x; 0 .. b.width) {
 
-            if (x >= a.width) break;
+            auto ax = x + offsetX;
+            if (ax >= a.width) break;
 
             const black = vec4(0, 0, 0, 1);
 
-            const aPixel = a[x, y];
+            const aPixel = a[ax, ay];
             const aAlpha = aPixel[3];
             const aTransparent = aPixel * vec4(1, 1, 1, 0);
 
@@ -249,7 +255,7 @@ private void addImage(SuperImage a, ImageRegion b, uint offsetX, uint offsetY) {
             const bAlpha = bPixel[3];
             const bTransparent = bPixel * vec4(1, 1, 1, 0);
 
-            a[x, y] = Color4f(
+            a[ax, ay] = Color4f(
                 + aTransparent * (1 - bAlpha)
                 + bTransparent * bAlpha
                 + black * max(aAlpha, bAlpha)

@@ -72,6 +72,8 @@ struct WordList {
             // Ignore comments
             if (text.length == 0 || text[0] == ';') continue;
 
+            bool thisNoun = noun;
+
             // Insert the data into the array, unless we'd override a noun
             words.update(text,
 
@@ -87,7 +89,7 @@ struct WordList {
                         ? sentiment
                         : old.sentiment;
 
-                    noun = old.noun || noun;
+                    thisNoun = old.noun || noun;
 
                     return Word(text, newType, old.noun || noun);
 
@@ -96,7 +98,7 @@ struct WordList {
             );
 
             // Insert the word into typing arrays
-            if (noun) {
+            if (thisNoun) {
 
                 if (sentiment > 0) positive ~= text;
                 else if (sentiment < 0) negative ~= text;

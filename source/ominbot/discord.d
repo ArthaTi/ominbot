@@ -100,7 +100,7 @@ class OminbotPlugin : Plugin {
             if (attachment.width > 1500 || attachment.height > 1500) continue;
 
             // Download the image
-            download(attachment.url, format!"resources/bot-download-%s.png"(attachment.id));
+            download(attachment.url, format!"resources/bot-img-%s.png"(attachment.id));
 
             writefln!"downloaded image %s id %s"(attachment.filename, attachment.id);
 
