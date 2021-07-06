@@ -19,6 +19,7 @@ You will have to create or modify the following files:
     the `textHeight` option.
 * `source/ominbot/params.d` — Bot parameters, defaults should be fine, but you can change those if you want to tweak
   its behavior.
+* `source/ominbot/discord.d` — You will want to update the `channelList` field, it's an allow list of Discord channel IDs to use.
 
 The bot also requires two runtime arguments:
 
