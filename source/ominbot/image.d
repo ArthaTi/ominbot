@@ -1,11 +1,13 @@
 module ominbot.image;
 
+import std.conv;
 import std.file;
 import std.path;
 import std.array;
 import std.format;
 import std.random;
 import std.string;
+import std.typecons;
 import std.algorithm;
 import std.stdio : writefln;
 
@@ -109,19 +111,46 @@ bool mutilateImage(string[] top, string[] bottom) {
 
     }
 
-    auto images = "resources".dirEntries("bot-img-*.png", SpanMode.shallow);
-    if (images.empty) return false;
+    const imagePath = randomImagePath;
+    if (imagePath is null) return false;
 
-    const editOwn = ImageOutputPath.exists && uniform(0, ImageEditOwnRarity) == 0;
+    writefln!"Beginning mutilation... Using %s as base."(imagePath);
 
-    const imagePath = editOwn
-        ? ImageOutputPath
-        : images.array.choice;
-
-
-    writefln!"Proceeding to mutilate image %s..."(imagePath);
-
+    // Load the main image
     auto image = loadImage(imagePath);
+
+    // Add a few images to mutilate
+    foreach (num; 0 .. uniform(ImageMinForegroundItems, ImageMaxForegroundItems)) {
+
+        // Load the images
+        auto sample = loadImage(randomImagePath);
+
+        // Prepare transforms
+        const scale = max(0.5, image.width / sample.width / 2);
+        const transX = uniform01 - 0.5;
+        const transY = uniform01 - 0.5;
+        const matrix = mat3([
+            1, transY, 0,
+            transX, 1, 0,
+            transX/2, transY/2, 1
+        ]);
+
+        // Break it
+        auto brokenImage = sample.affineTransformImage(matrix);
+
+        // Get the region
+        auto brokenRegion = brokenImage
+            .region(0, 0, sample.width, sample.height);
+
+        // Add the image
+        image.addImage(
+            brokenRegion,
+            uniform(0, max(1, image.width - sample.width)),
+            uniform(0, max(1, image.height - sample.height)),
+            scale,
+        );
+
+    }
 
     // Add text
     image.addText(top, 0);
@@ -142,12 +171,40 @@ unittest {
 
 }
 
+/// Get a random image
+private string randomImagePath() {
+
+    const editOwn = ImageOutputPath.exists && uniform(0, ImageEditOwnRarity) == 0;
+
+    auto images = "resources".dirEntries("bot-img-*.png", SpanMode.shallow);
+    if (images.empty) return null;
+
+    return editOwn
+        ? ImageOutputPath
+        : images.array.choice;
+
+}
+
 /// Add text to given image in place.
-void addText(SuperImage a, string[] words, uint offsetY) {
+private void addText(SuperImage a, string[] words, uint offsetY) {
+
+    byte direction = 1;
 
     foreach (line; spreadText(words, a.width)) {
 
-        scope (exit) offsetY += textHeight;
+        scope (exit) {
+
+            offsetY += textHeight * direction;
+
+            // Out of image bounds
+            if (direction > 0 && offsetY >= a.height) {
+
+                offsetY -= textHeight*2;
+                direction = -1;
+
+            }
+
+        }
 
         const lineWidth = line
             .map!(a => a.width + spaceWidth)
@@ -233,16 +290,20 @@ private WordData wordData(string word) {
 }
 
 /// Combine two images. Modifies the first image in place.
-private void addImage(SuperImage a, ImageRegion b, uint offsetX, uint offsetY) {
+private void addImage(SuperImage a, ImageRegion b, uint offsetX, uint offsetY, float scale = 1) {
 
-    foreach (y; 0 .. b.height) {
+    foreach (y; 0 .. to!int(b.height * scale)) {
 
-        auto ay = y + offsetY;
+        const ay = y + offsetY;
+        const by = b.ystart + to!int(y / scale);
+
         if (ay >= a.height) break;
 
-        foreach (x; 0 .. b.width) {
+        foreach (x; 0 .. to!int(b.width * scale)) {
 
-            auto ax = x + offsetX;
+            const ax = x + offsetX;
+            const bx = b.xstart + to!int(x / scale);
+
             if (ax >= a.width) break;
 
             const black = vec4(0, 0, 0, 1);
@@ -251,7 +312,7 @@ private void addImage(SuperImage a, ImageRegion b, uint offsetX, uint offsetY) {
             const aAlpha = aPixel[3];
             const aTransparent = aPixel * vec4(1, 1, 1, 0);
 
-            const bPixel = b.img[b.xstart + x, b.ystart + y];
+            const bPixel = b.img[bx, by];
             const bAlpha = bPixel[3];
             const bTransparent = bPixel * vec4(1, 1, 1, 0);
 
