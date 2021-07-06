@@ -114,7 +114,11 @@ class OminbotPlugin : Plugin {
         if (forceSend || uniform(0, bot.replyRarity) == 0) {
 
             // Boost reply chance
-            bot.replyRarity = BoostedReplyRarity;
+            if (bot.replyRarity == InitialReplyRarity) {
+
+                bot.replyRarity = BoostedReplyRarity;
+
+            }
 
             // Give a chance to post an image
             if (uniform(0, ImagePostingRarity) == 0
