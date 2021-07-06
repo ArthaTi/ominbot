@@ -26,18 +26,21 @@ void main(string[] args) {
 
     writefln!"Corpus loaded in %s"(Clock.currTime - time);
 
-    bot.launchDiscord(args[1]);
+    bot.launchDiscord(args[1], args[2]);
 
 }
 
-void launchDiscord(ref Ominbot bot, string token) {
+void launchDiscord(ref Ominbot bot, string discordToken, string imgBBToken) {
 
     BotConfig config;
-    config.token = token;
+    config.token = discordToken;
     config.cmdPrefix = "";
 
-    Bot dscBot = new Bot(config, LogLevel.trace);
-    dscBot.loadPlugin(new OminbotPlugin(bot));
+    auto plugin = new OminbotPlugin(bot);
+    plugin.imgBBToken = imgBBToken;
+
+    auto dscBot = new Bot(config, LogLevel.trace);
+    dscBot.loadPlugin(plugin);
     dscBot.run();
     runEventLoop();
 

@@ -13,7 +13,7 @@ enum RandomEventFrequency = 5.minutes;
 enum InitialReplyRarity = 50;
 enum BoostedReplyRarity = 10;
 
-enum ImagePostingRarity = 10;
+enum ImagePostingRarity = 100;
 enum ImageEditOwnRarity = 5;  // Rarity of editing own image output
 enum ImageMinForegroundItems = 0;
 enum ImageMaxForegroundItems = 3;

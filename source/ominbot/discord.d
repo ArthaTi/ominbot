@@ -2,6 +2,7 @@ module ominbot.discord;
 
 import dcord.core;
 import vibe.core.core;
+import vibe.http.client;
 import vibe.inet.urltransfer;
 
 import std.stdio;
@@ -19,6 +20,7 @@ class OminbotPlugin : Plugin {
 
     Ominbot* bot;
     bool runEvents;
+    string imgBBToken;
 
     immutable channelList = [
         861611045537972275,  // private server
@@ -115,9 +117,32 @@ class OminbotPlugin : Plugin {
             bot.replyRarity = BoostedReplyRarity;
 
             // Give a chance to post an image
-            if (uniform(0, ImagePostingRarity) == 0) {
+            if (uniform(0, ImagePostingRarity) == 0
+                && imgBBToken
+                && mutilateImage(*bot)) {
 
-                mutilateImage(*bot);
+                // Upload to ImgBB
+                requestHTTP(format!"https://api.imgbb.com/1/upload?key=%s"(imgBBToken),
+
+                    (scope HTTPClientRequest req) {
+
+                        import std.base64;
+                        import std.file : read;
+
+                        req.method = HTTPMethod.POST;
+                        req.writeFormBody([
+                            "image": cast(string) Base64.encode(cast(ubyte[]) ImageOutputPath.read),
+                        ]);
+
+                    },
+
+                    (scope HTTPClientResponse res) {
+
+                        event.message.reply(res.readJson["data"]["url"].get!string);
+
+                    }
+
+                );
 
             }
 
