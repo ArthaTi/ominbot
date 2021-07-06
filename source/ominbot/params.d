@@ -13,4 +13,6 @@ enum RandomEventFrequency = 5.minutes;
 enum InitialReplyRarity = 50;
 enum BoostedReplyRarity = 10;
 
-enum ImagePostingChance = 3;
+enum ImagePostingRarity = 3;
+enum ImageEditOwnRarity = 5;  // Rarity of editing own image output
+enum ImageOutputPath = "resources/bot-output.png";

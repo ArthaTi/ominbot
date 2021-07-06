@@ -7,6 +7,7 @@ import vibe.inet.urltransfer;
 import std.stdio;
 import std.format;
 import std.random;
+import std.string;
 import std.algorithm;
 
 import ominbot.bot;
@@ -99,7 +100,7 @@ class OminbotPlugin : Plugin {
             if (attachment.width > 1500 || attachment.height > 1500) continue;
 
             // Download the image
-            download(attachment.url, format!"resources/bot-%s.png"(attachment.id));
+            download(attachment.url, format!"resources/bot-download-%s.png"(attachment.id));
 
             writefln!"downloaded image %s id %s"(attachment.filename, attachment.id);
 
@@ -114,7 +115,7 @@ class OminbotPlugin : Plugin {
             bot.replyRarity = BoostedReplyRarity;
 
             // Give a chance to post an image
-            if (uniform(0, ImagePostingChance) == 0) {
+            if (uniform(0, ImagePostingRarity) == 0) {
 
                 mutilateImage(*bot);
 
@@ -124,7 +125,7 @@ class OminbotPlugin : Plugin {
             else {
 
                 // Get a message
-                const result = bot.statusUpdate(event.message.content);
+                const result = bot.statusUpdate(event.message.content).join(" ");
 
                 // Post a reply
                 event.message.reply(result);

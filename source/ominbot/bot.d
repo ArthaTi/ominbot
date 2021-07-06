@@ -39,7 +39,7 @@ struct Ominbot {
     }
 
     /// Wake the bot up and request a response.
-    string statusUpdate(string context = "") {
+    string[] statusUpdate(string context = "") {
 
         auto words = context.length
             ?  getNouns(context)

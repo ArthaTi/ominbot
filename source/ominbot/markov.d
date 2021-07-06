@@ -53,7 +53,7 @@ void feed(ref MarkovModel model, Word[] words) {
 
 }
 
-string generate(ref MarkovModel model, int humor, string[] context = []) {
+string[] generate(ref MarkovModel model, int humor, string[] context = []) {
 
     auto list = getWordList();
 
@@ -128,7 +128,7 @@ string generate(ref MarkovModel model, int humor, string[] context = []) {
 
     }
 
-    return output.amplify(humor).join(" ");
+    return output.amplify(humor);
 
 }
 

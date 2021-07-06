@@ -1,6 +1,7 @@
 module ominbot.random_event;
 
 import std.random;
+import std.string;
 
 import ominbot.bot;
 import ominbot.params;
@@ -20,7 +21,7 @@ immutable RandomEvent[] events = [
     },
 
     (ref bot) {
-        return bot.statusUpdate();
+        return bot.statusUpdate().join(" ");
     },
 
     (ref bot) {
