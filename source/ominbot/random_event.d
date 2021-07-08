@@ -25,7 +25,7 @@ immutable RandomEvent[] events = [
     },
 
     (ref bot) {
-        bot.replyRarity = BoostedReplyRarity;
+        bot.replyRarity = ActiveReplyRarity;
         return null;
     },
 

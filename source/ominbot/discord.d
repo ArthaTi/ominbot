@@ -22,14 +22,6 @@ class OminbotPlugin : Plugin {
     bool runEvents;
     string imgBBToken;
 
-    immutable channelList = [
-        861611045537972275,  // private server
-        742790712529125469,  // samerion #general
-        772160498614665247,  // samerion #bots
-        //280298381807714304,  // #oman-pls-to-help
-        //325969983441993729,  // #bot-lemons
-    ];
-
     this(ref Ominbot bot) {
 
         this.bot = &bot;
@@ -37,7 +29,7 @@ class OminbotPlugin : Plugin {
         // Every minute reduce bot post rarity
         setTimer(1.minutes, {
 
-            bot.replyRarity = min(InitialReplyRarity, bot.replyRarity + 1);
+            bot.replyRarity = min(InitialReplyRarity, bot.replyRarity + RestoreReplyRarityPerMinute);
 
         }, true);
 
@@ -74,7 +66,9 @@ class OminbotPlugin : Plugin {
         if (!channelList.canFind(event.message.channel.id)) return;
 
 
-        bool forceSend;
+        const forceImage = event.message.author.id == 366675056979476480
+            && event.message.content.toLower == "omin, yeet me an image!";
+        bool forceSend = forceImage;
 
         // Enable events, if off.
         runEvents = true;
@@ -113,22 +107,30 @@ class OminbotPlugin : Plugin {
         // Trigger a reply
         if (forceSend || uniform(0, bot.replyRarity) == 0) {
 
+            const sendImage = forceImage || !uniform(0, ImagePostingRarity);
+
             // Boost reply chance
             if (bot.replyRarity == InitialReplyRarity) {
 
-                bot.replyRarity = BoostedReplyRarity;
+                bot.replyRarity = ActiveReplyRarity;
 
             }
 
             // Give a chance to post an image
-            if (uniform(0, ImagePostingRarity) == 0
+            if (sendImage
                 && imgBBToken
                 && mutilateImage(*bot)) {
+
+                writefln!"starting upload...";
+                scope (failure) writefln!"upload failed.";
 
                 // Upload to ImgBB
                 requestHTTP(format!"https://api.imgbb.com/1/upload?key=%s"(imgBBToken),
 
                     (scope HTTPClientRequest req) {
+
+                        writefln!"building request";
+                        scope (failure) writefln!"build failed.";
 
                         import std.base64;
                         import std.file : read;
@@ -141,6 +143,8 @@ class OminbotPlugin : Plugin {
                     },
 
                     (scope HTTPClientResponse res) {
+
+                        writefln!"got a response %s"(res.statusCode);
 
                         event.message.reply(res.readJson["data"]["url"].get!string);
 

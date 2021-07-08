@@ -59,11 +59,22 @@ string[] generate(ref MarkovModel model, int humor, string[] context = []) {
 
     string[] output;
 
-    auto entry = (context.length && uniform(0, 2))
-        ? model.get(context.choice, model[""])
-        : model[""];
+    // Initialize with sentence start context
+    auto entry = model[""];
 
     string getWord() {
+
+        // Try to steal a word from the context
+        if (context.length) {
+
+            const index = uniform(0, context.length);
+
+            // Fail chance is probably pretty big unless the prompt uses only nouns
+            // Hence this is a rather safe operation and there's still a big chance to reuse the word
+            entry = model.get(context[index], entry);
+            context = context.remove(index);
+
+        }
 
         return entry.getBestItem(output, humor).nextWord.word;
 
@@ -90,18 +101,6 @@ string[] generate(ref MarkovModel model, int humor, string[] context = []) {
         // Otherwise trigger markov
         else output ~= getWord();
 
-        // Make a random chance to add a word from the context to the model
-        if (context.length && uniform(0, 4) == 0) {
-
-            if (auto part = context.choice in model) {
-
-                entry = *part;
-                continue;
-
-            }
-
-        }
-
         // Add to context
         if (auto part = output[$-1] in model) {
 
@@ -115,16 +114,19 @@ string[] generate(ref MarkovModel model, int humor, string[] context = []) {
 
             }
 
+            continue;
+
         }
 
         // Found no words, try to use a random word
-        else if (auto part = randomWord() in model) {
+        if (auto part = randomWord() in model) {
 
             entry = *part;
 
         }
 
-        else break;
+        // :(
+        break;
 
     }
 
@@ -188,7 +190,7 @@ private MarkovItem getBestItem(ref MarkovEntry entry, string[] context, int humo
 
     if (context.length)
     return sorted
-        .take(Precision)
+        .take(WorstFit)
         .array
         .randomShuffle
         .front;
