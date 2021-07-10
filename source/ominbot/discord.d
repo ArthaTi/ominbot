@@ -102,12 +102,14 @@ class OminbotPlugin : Plugin {
 
         }
 
-        writefln!"MessageCreate(%+3s): %s"(bot.humor, event.message);
+        writefln!"MessageCreate(%+3s): %s"(bot.humor, bot.replyRarity);
 
         // Trigger a reply
         if (forceSend || uniform(0, bot.replyRarity) == 0) {
 
-            const sendImage = forceImage || !uniform(0, ImagePostingRarity);
+            const frequencyBoostValue = ImageMaxFrequencyBoost * bot.replyRarity / InitialReplyRarity;
+            const frequencyBoost = forceSend ? 1 : clamp(frequencyBoostValue, 1, ImageMaxFrequencyBoost);
+            const sendImage = forceImage || !uniform(0, ImagePostingRarity / frequencyBoost);
 
             // Boost reply chance
             if (bot.replyRarity == InitialReplyRarity) {

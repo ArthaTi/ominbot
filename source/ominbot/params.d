@@ -11,11 +11,13 @@ enum RandomEventFrequency = 5.minutes;
 
 // Note: lower values give a higher chance.
 enum InitialReplyRarity = 120;
-enum ActiveReplyRarity = 20;
+enum ActiveReplyRarity = 10;
 enum RestoreReplyRarityPerMinute = 30;
 
 enum ImagePostingRarity = 100;
-enum ImageEditOwnRarity = 5;  // Rarity of editing own image output
+enum ImageMaxFrequencyBoost = 10;  // Send images up to N times more frequently on random responses (if close to initial
+                                   // reply rarity)
+enum ImageEditOwnRarity = 5;    // Rarity of editing own image output
 enum ImageMinForegroundItems = 0;
 enum ImageMaxForegroundItems = 3;
 enum ImageOutputPath = "resources/bot-output.png";
