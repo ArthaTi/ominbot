@@ -13,6 +13,8 @@ import ominbot.word_lists;
 
 struct Ominbot {
 
+    alias MessageSentiment = LimitInt!(-3, 3);
+
     MarkovModel model;
     LimitInt!(-HumorLimit, HumorLimit) humor;
 
@@ -26,15 +28,19 @@ struct Ominbot {
     }
 
     /// Load data into the bot and save it for future.
-    void feed(const string data, void delegate(ulong) pinged = null) {
+    MessageSentiment feed(string data, void delegate(ulong) pinged = null) {
 
         import std.file : append;
 
+        MessageSentiment inputSentiment;
+
         // Feed the model
-        model.feed(getNouns!3(data, pinged));
+        model.feed(getNouns(data, inputSentiment, pinged));
 
         // Add to corpus
         append("resources/bot-corpus.txt", data.strip ~ "\n");
+
+        return inputSentiment;
 
     }
 
@@ -51,27 +57,31 @@ struct Ominbot {
 
     }
 
-    private Word[] getNouns(int sentimentLimit = 0)(string data, void delegate(ulong) pinged = null) {
+    private Word[] getNouns(string data, void delegate(ulong) pinged = null) {
+
+        MessageSentiment ignore;
+        return getNouns(data, ignore, pinged);
+
+    }
+
+    private Word[] getNouns(string data, out MessageSentiment inputSentiment, void delegate(ulong) pinged = null) {
 
         const list = getWordList();
 
         Word[] nouns;
         string key;
 
-        LimitInt!(-sentimentLimit, sentimentLimit) inputSentiment;
-
         void pushWord() {
 
             string marks;
 
-            // Allow pings
+            // Find pings
             if (auto id = isPing(key)) {
 
                 // Trigger the signal if pinged
                 if (pinged) pinged(id);
 
-                nouns ~= Word(key, 0, false);
-
+                // Do not put pings in the model
                 return;
 
             }
@@ -126,7 +136,7 @@ struct Ominbot {
                 case '?', '!', '‽':
                     key ~= ch;
 
-                    // Ping! don't end yet
+                    // Ping! Don't end yet
                     if (key == "<@!") break;
 
                 // End of sentence
@@ -144,8 +154,6 @@ struct Ominbot {
         }
 
         pushSentence();
-
-        humor += inputSentiment;
 
         return nouns;
 

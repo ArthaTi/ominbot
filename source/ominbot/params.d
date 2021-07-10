@@ -6,7 +6,7 @@ enum ContextSize = 3;
 enum MinWords = 2;  // The bot will not always respect this field
 enum MaxWords = 5;
 enum WorstFit = 3;  // The bot will only consider top N matches for each word
-enum HumorLimit = 25;
+enum HumorLimit = 50;
 enum RandomEventFrequency = 5.minutes;
 
 // Note: lower values give a higher chance.

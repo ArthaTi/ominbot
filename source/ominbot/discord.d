@@ -74,7 +74,7 @@ class OminbotPlugin : Plugin {
         runEvents = true;
 
         // Feed the bot
-        bot.feed(event.message.content, (ulong id) {
+        int inputSentiment = bot.feed(event.message.content, (ulong id) {
 
             // Pinged!
             if (id != me.id) return;
@@ -82,6 +82,8 @@ class OminbotPlugin : Plugin {
             forceSend = true;
 
         });
+
+        bot.humor += inputSentiment * (forceSend ? 2 : 1);
 
         // If there is a png attached
         foreach (attachment; event.message.attachments) {
