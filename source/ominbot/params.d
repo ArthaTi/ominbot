@@ -10,11 +10,11 @@ enum HumorLimit = 50;
 enum RandomEventFrequency = 5.minutes;
 
 // Note: lower values give a higher chance.
-enum InitialReplyRarity = 150;
+enum InitialReplyRarity = 120;
 enum ActiveReplyRarity = 20;
 enum RestoreReplyRarityPerMinute = 30;
 
-enum ImagePostingRarity = 120;
+enum ImagePostingRarity = 100;
 enum ImageEditOwnRarity = 5;  // Rarity of editing own image output
 enum ImageMinForegroundItems = 0;
 enum ImageMaxForegroundItems = 3;

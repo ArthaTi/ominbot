@@ -10,6 +10,7 @@ import std.format;
 import std.random;
 import std.string;
 import std.algorithm;
+import std.container;
 
 import ominbot.bot;
 import ominbot.image;
@@ -19,8 +20,9 @@ import ominbot.random_event;
 class OminbotPlugin : Plugin {
 
     Ominbot* bot;
-    bool runEvents;
     string imgBBToken;
+
+    auto activeChannels = redBlackTree!long;
 
     this(ref Ominbot bot) {
 
@@ -36,21 +38,17 @@ class OminbotPlugin : Plugin {
         // Trigger a random event once in 5 minutes
         setTimer(5.minutes, {
 
-            if (!runEvents) return;
-
             auto content = bot.runRandomEvent();
 
+            // If a message was generated and there is a channel available
             if (!content) return;
+            if (activeChannels.empty) return;
 
-            // Send the resulting message and disable events
-            runEvents = false;
-            client.api.channelsMessagesCreate(
-                channelList[].choice,
-                content,
-                null,
-                false,
-                null,
-            );
+            // Get some channel
+            const channel = activeChannels.removeAny;
+
+            // Send the resulting message
+            client.api.channelsMessagesCreate(channel, content, null, false, null);
 
         }, true);
 
@@ -70,8 +68,8 @@ class OminbotPlugin : Plugin {
             && event.message.content.toLower == "omin, yeet me an image!";
         bool forceSend = forceImage;
 
-        // Enable events, if off.
-        runEvents = true;
+        // Enable events for this channel
+        activeChannels.insert(event.message.channel.id);
 
         // Feed the bot
         int inputSentiment = bot.feed(event.message.content, (ulong id) {
