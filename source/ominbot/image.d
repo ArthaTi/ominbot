@@ -105,28 +105,26 @@ bool mutilateImage(ref Ominbot bot) {
 
 bool mutilateImage(string[] top, string[] bottom) {
 
+    // TODO: thread-safe?
     if (fontBitmap is null) {
 
         fontBitmap = loadImage("resources/bot-impact.png");
 
     }
 
-    const imagePath = randomImagePath;
-    if (imagePath is null) return false;
-
-    writefln!"Beginning mutilation... Using %s as base."(imagePath);
+    writefln!"Beginning mutilation...";
 
     // Load the main image
-    auto image = loadImage(imagePath);
+    auto image = randomImage();
 
     // Add a few images to mutilate
     foreach (num; 0 .. uniform(ImageMinForegroundItems, ImageMaxForegroundItems)) {
 
         // Load the images
-        auto sample = loadImage(randomImagePath);
+        auto sample = randomImage();
 
         // Prepare transforms
-        const scale = max(0.5, image.width / sample.width / 2);
+        const scale = cast(float) image.width / sample.width / 2;
         const transX = uniform01 - 0.5;
         const transY = uniform01 - 0.5;
         const matrix = mat3([
@@ -142,13 +140,17 @@ bool mutilateImage(string[] top, string[] bottom) {
         auto brokenRegion = brokenImage
             .region(0, 0, sample.width, sample.height);
 
+        const posX = cast(uint) uniform(0, max(1, image.width - sample.width * scale));
+        const posY = cast(uint) uniform(0, max(1, image.height - sample.height * scale));
+
         // Add the image
         image.addImage(
             brokenRegion,
-            uniform(0, max(1, image.width - sample.width)),
-            uniform(0, max(1, image.height - sample.height)),
+            posX, posY,
             scale,
         );
+
+        writefln!"adding at %s,%s scale %s"(posX, posY, scale);
 
     }
 
@@ -172,6 +174,33 @@ unittest {
 }
 
 /// Get a random image
+private SuperImage randomImage() {
+
+    while (true) {
+
+        auto path = randomImagePath();
+        scope (success) writefln!"using png %s"(path);
+
+        // Might have not gotten an image, fail instantly
+        if (path is null) return null;
+
+        // Try to load the image
+        try return loadPNG(path);
+
+        // Oops, failed, remove the image to prevent further problems like this
+        // Also retry
+        catch (ImageLoadException exc) {
+
+            writefln!"invalid png %s! trying another..."(path);
+            remove(path);
+
+        }
+
+    }
+
+}
+
+/// Find a random image path
 private string randomImagePath() {
 
     const editOwn = ImageOutputPath.exists && uniform(0, ImageEditOwnRarity) == 0;

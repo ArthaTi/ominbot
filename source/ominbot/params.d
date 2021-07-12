@@ -18,7 +18,7 @@ enum ImagePostingRarity = 100;
 enum ImageMaxFrequencyBoost = 10;  // Send images up to N times more frequently on random responses (if close to initial
                                    // reply rarity)
 enum ImageEditOwnRarity = 5;    // Rarity of editing own image output
-enum ImageMinForegroundItems = 0;
+enum ImageMinForegroundItems = 1;
 enum ImageMaxForegroundItems = 3;
 enum ImageOutputPath = "resources/bot-output.png";
 

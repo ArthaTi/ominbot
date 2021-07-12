@@ -119,42 +119,7 @@ class OminbotPlugin : Plugin {
             }
 
             // Give a chance to post an image
-            if (sendImage
-                && imgBBToken
-                && mutilateImage(*bot)) {
-
-                writefln!"starting upload...";
-                scope (failure) writefln!"upload failed.";
-
-                // Upload to ImgBB
-                requestHTTP(format!"https://api.imgbb.com/1/upload?key=%s"(imgBBToken),
-
-                    (scope HTTPClientRequest req) {
-
-                        writefln!"building request";
-                        scope (failure) writefln!"build failed.";
-
-                        import std.base64;
-                        import std.file : read;
-
-                        req.method = HTTPMethod.POST;
-                        req.writeFormBody([
-                            "image": cast(string) Base64.encode(cast(ubyte[]) ImageOutputPath.read),
-                        ]);
-
-                    },
-
-                    (scope HTTPClientResponse res) {
-
-                        writefln!"got a response %s"(res.statusCode);
-
-                        event.message.reply(res.readJson["data"]["url"].get!string);
-
-                    }
-
-                );
-
-            }
+            if (sendImage && imgBBToken && mutilateImage(*bot)) uploadImage(event.message.channel);
 
             // Post text instead
             else {
@@ -168,6 +133,47 @@ class OminbotPlugin : Plugin {
             }
 
         }
+
+    }
+
+    void uploadImage(Channel channel, Duration retryTimeout = 1.seconds) {
+
+        writefln!"starting upload...";
+        scope (failure) {
+
+            writefln!"upload failed, retrying in %s"(retryTimeout);
+
+            setTimer(retryTimeout, () => uploadImage(channel, retryTimeout + 2.seconds), false);
+
+        }
+
+        // Upload to ImgBB
+        requestHTTP(format!"https://api.imgbb.com/1/upload?key=%s"(imgBBToken),
+
+            (scope HTTPClientRequest req) {
+
+                writefln!"building request";
+                scope (failure) writefln!"build failed.";
+
+                import std.base64;
+                import std.file : read;
+
+                req.method = HTTPMethod.POST;
+                req.writeFormBody([
+                    "image": cast(string) Base64.encode(cast(ubyte[]) ImageOutputPath.read),
+                ]);
+
+            },
+
+            (scope HTTPClientResponse res) {
+
+                writefln!"got a response %s"(res.statusCode);
+
+                channel.sendMessage(res.readJson["data"]["url"].get!string);
+
+            }
+
+        );
 
     }
 
