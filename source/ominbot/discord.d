@@ -119,18 +119,28 @@ class OminbotPlugin : Plugin {
             }
 
             // Give a chance to post an image
-            if (sendImage && imgBBToken && mutilateImage(*bot)) uploadImage(event.message.channel);
+            if (sendImage && imgBBToken) {
 
-            // Post text instead
-            else {
+                import dcord.api.routes : Route;
 
-                // Get a message
-                const result = bot.statusUpdate(event.message.content).join(" ");
+                // Give a typing indicator
+                auto route = Route(HTTPMethod.POST, "/channels/$CHANNEL/typing");
+                client.api.requestJSON(route(event.message.channel.id));
 
-                // Post a reply
-                event.message.reply(result);
+                if (mutilateImage(*bot)) {
+
+                    uploadImage(event.message.channel);
+                    return;
+
+                }
 
             }
+
+            // Get a message
+            const result = bot.statusUpdate(event.message.content).join(" ");
+
+            // Post a text reply
+            event.message.reply(result);
 
         }
 
