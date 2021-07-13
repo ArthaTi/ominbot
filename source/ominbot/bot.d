@@ -5,6 +5,7 @@ import std.array;
 import std.ascii;
 import std.range;
 import std.string;
+import std.random;
 import std.algorithm;
 
 import ominbot.markov;
@@ -16,9 +17,13 @@ struct Ominbot {
     alias MessageSentiment = LimitInt!(-3, 3);
 
     MarkovModel model;
-    LimitInt!(-HumorLimit, HumorLimit) humor;
 
+    // Current params
+    LimitInt!(-HumorLimit, HumorLimit) humor;
     int replyRarity = InitialReplyRarity;
+    auto channelList = ChannelList.dup;
+    bool forceImage;
+    bool longerSentences;
 
     /// Load data into the bot.
     void load(const string data) {
@@ -53,7 +58,11 @@ struct Ominbot {
                 .array
             : [];
 
-        return model.generate(humor, words);
+        const wordCount = longerSentences
+            ? uniform!"[]"(MaxWords, MaxBoostedWords)
+            : uniform!"[]"(MinWords, MaxWords);
+
+        return model.generate(humor, wordCount, words);
 
     }
 

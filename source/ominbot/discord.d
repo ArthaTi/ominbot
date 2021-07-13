@@ -15,6 +15,7 @@ import std.container;
 import ominbot.bot;
 import ominbot.image;
 import ominbot.params;
+import ominbot.commands;
 import ominbot.random_event;
 
 class OminbotPlugin : Plugin {
@@ -47,6 +48,9 @@ class OminbotPlugin : Plugin {
             // Get some channel
             const channel = activeChannels.removeAny;
 
+            // Make sure the channel is in the list
+            if (!bot.channelList.canFind(channel)) return;
+
             // Send the resulting message
             client.api.channelsMessagesCreate(channel, content, null, false, null);
 
@@ -60,13 +64,14 @@ class OminbotPlugin : Plugin {
         // Ignore own messages
         if (event.message.author.id == me.id) return;
 
+        // Try to run commands if it's the bot owner, force send if true
+        const ranCommand = event.message.author.id == BotOwner
+            && bot.runCommands(event.message.content, event.message.channel.id);
+
+        bool forceSend = ranCommand;
+
         // Make sure the channel is in the list
-        if (!channelList.canFind(event.message.channel.id)) return;
-
-
-        const forceImage = event.message.author.id == 366675056979476480
-            && event.message.content.toLower == "omin, yeet me an image!";
-        bool forceSend = forceImage;
+        if (!bot.channelList.canFind(event.message.channel.id)) return;
 
         // Enable events for this channel
         activeChannels.insert(event.message.channel.id);
@@ -109,9 +114,17 @@ class OminbotPlugin : Plugin {
 
             const frequencyBoostValue = ImageMaxFrequencyBoost * bot.replyRarity / InitialReplyRarity;
             const frequencyBoost = forceSend ? 1 : clamp(frequencyBoostValue, 1, ImageMaxFrequencyBoost);
-            const sendImage = forceImage || !uniform(0, ImagePostingRarity / frequencyBoost);
+            const sendImage = bot.forceImage || !uniform(0, ImagePostingRarity / frequencyBoost);
 
-            // Boost reply chance
+            bot.forceImage = false;
+
+            // Give a chance to boost word count
+            if (!uniform(0, BoostRarity)) bot.longerSentences = true;
+
+            // Disable after sending the message
+            scope (exit) bot.longerSentences = false;
+
+            // Increase reply chance
             if (bot.replyRarity == InitialReplyRarity) {
 
                 bot.replyRarity = ActiveReplyRarity;

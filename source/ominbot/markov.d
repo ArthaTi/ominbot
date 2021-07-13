@@ -53,7 +53,7 @@ void feed(ref MarkovModel model, Word[] words) {
 
 }
 
-string[] generate(ref MarkovModel model, int humor, string[] context = []) {
+string[] generate(ref MarkovModel model, int humor, int wordCount, string[] context = []) {
 
     auto list = getWordList();
 
@@ -88,10 +88,10 @@ string[] generate(ref MarkovModel model, int humor, string[] context = []) {
 
     }
 
-    while (output.length < MinWords || output.length <= uniform(0, MaxWords)) {
+    while (output.length < wordCount) {
 
         // The more emotional, the higher should be the chance
-        if (abs(humor) > uniform(0, HumorLimit * 2)) {
+        if (abs(humor) > uniform(0, HumorLimit * 3)) {
 
             // Pick a random word
             output ~= randomWord();
@@ -126,7 +126,6 @@ string[] generate(ref MarkovModel model, int humor, string[] context = []) {
         }
 
         // :(
-        break;
 
     }
 

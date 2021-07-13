@@ -2,9 +2,13 @@ module ominbot.params;
 
 import std.datetime;
 
+enum BotOwner = 366675056979476480;
+
 enum ContextSize = 3;
 enum MinWords = 2;  // The bot will not always respect this field
 enum MaxWords = 5;
+enum MaxBoostedWords = 30;
+enum BoostRarity = 100;
 enum WorstFit = 3;  // The bot will only consider top N matches for each word
 enum HumorLimit = 50;
 enum RandomEventFrequency = 5.minutes;
@@ -22,7 +26,7 @@ enum ImageMinForegroundItems = 1;
 enum ImageMaxForegroundItems = 3;
 enum ImageOutputPath = "resources/bot-output.png";
 
-immutable channelList = [
+enum ChannelList = [
     861611045537972275,  // private server
     742790712529125469,  // samerion #general
     772160498614665247,  // samerion #bots
