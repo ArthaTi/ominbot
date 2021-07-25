@@ -3,7 +3,7 @@
 	"versions": {
 		"botan": "1.12.19",
 		"botan-math": "1.0.3",
-		"dcord": "~main",
+		"dcord": "0.0.5",
 		"diet-ng": "1.7.5",
 		"dlib": "0.22.0",
 		"dmagick": "0.2.4",

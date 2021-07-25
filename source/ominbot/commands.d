@@ -9,16 +9,19 @@ import ominbot.params;
 /// Run a command. Returns true if a command was executed
 bool runCommands(Ominbot* bot, string message, long channelID) {
 
-    string command = message.toLower.chompPrefix("omin, ");
+    string commandStr = message.toLower.chompPrefix("omin, ");
 
     // Not a command!
-    if (message.length == command.length) return false;
+    if (message.length == commandStr.length) return false;
 
     // Also trim marks
-    command = command.strip("!?‽."d);
+    commandStr = commandStr.strip("!?‽."d);
+
+    // Get args
+    auto args = commandStr.split(": ");
 
     // Ok, this might be a command
-    switch (command) {
+    switch (args[0]) {
 
         case "shut up":
         case "shutup":
@@ -78,6 +81,11 @@ bool runCommands(Ominbot* bot, string message, long channelID) {
         case "make something cool":
         case "it's meme time":
             bot.forceImage = true;
+            return true;
+
+        case "mutilate":
+            bot.forceImage = true;
+            if (args.length > 1) bot.nextImageURL = args[1];
             return true;
 
         case "release anger":

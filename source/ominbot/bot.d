@@ -23,6 +23,7 @@ struct Ominbot {
     int replyRarity = InitialReplyRarity;
     auto channelList = ChannelList.dup;
     bool forceImage;
+    string nextImageURL;
     bool longerSentences;
 
     /// Load data into the bot.

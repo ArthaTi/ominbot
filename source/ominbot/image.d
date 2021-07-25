@@ -97,13 +97,16 @@ shared static this() {
 
 /// Mutilate an image.
 /// Returns: True if done.
-bool mutilateImage(ref Ominbot bot) {
+bool mutilateImage(ref Ominbot bot, string baseImage = null) {
 
-    return mutilateImage(bot.statusUpdate, bot.statusUpdate);
+    auto imageURL = bot.nextImageURL;
+    bot.nextImageURL = null;
+
+    return mutilateImage(bot.statusUpdate, bot.statusUpdate, imageURL);
 
 }
 
-bool mutilateImage(string[] top, string[] bottom) {
+bool mutilateImage(string[] top, string[] bottom, string baseImage = null) {
 
     // TODO: thread-safe?
     if (fontBitmap is null) {
@@ -115,7 +118,7 @@ bool mutilateImage(string[] top, string[] bottom) {
     writefln!"Beginning mutilation...";
 
     // Load the main image
-    auto image = randomImage();
+    auto image = baseImage ? loadPNG(baseImage) : randomImage();
 
     // Add a few images to mutilate
     foreach (num; 0 .. uniform(ImageMinForegroundItems, ImageMaxForegroundItems)) {

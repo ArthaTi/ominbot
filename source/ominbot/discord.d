@@ -58,7 +58,7 @@ class OminbotPlugin : Plugin {
 
     }
 
-    @Listener!(MessageCreate, EmitterOrder.AFTER)
+    @Listener!(MessageCreate)
     void messageCreated(MessageCreate event) {
 
         // Ignore own messages
