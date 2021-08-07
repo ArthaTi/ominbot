@@ -10,11 +10,10 @@ import std.algorithm;
 
 import ominbot.markov;
 import ominbot.params;
+import ominbot.structs;
 import ominbot.word_lists;
 
 struct Ominbot {
-
-    alias MessageSentiment = LimitInt!(-3, 3);
 
     MarkovModel model;
 
@@ -34,19 +33,19 @@ struct Ominbot {
     }
 
     /// Load data into the bot and save it for future.
-    MessageSentiment feed(string data, void delegate(ulong) pinged = null) {
+    FeedingResult feed(string data, void delegate(ulong) pinged = null) {
 
         import std.file : append;
 
-        MessageSentiment inputSentiment;
+        FeedingResult result;
 
         // Feed the model
-        model.feed(getNouns(data, inputSentiment, pinged));
+        result.phrases = model.feed(getNouns(data, /*out*/ result.sentiment, pinged));
 
         // Add to corpus
         append("resources/bot-corpus.txt", data.strip ~ "\n");
 
-        return inputSentiment;
+        return result;
 
     }
 
@@ -110,11 +109,24 @@ struct Ominbot {
             // Update sentiment
             inputSentiment += word.sentiment;
 
-            // Add marks
-            word.word ~= marks;
-
             // Collect nouns
-            if (word.noun) nouns ~= word;
+            if (word.noun) {
+
+                // If there are marks
+                if (marks.length) {
+
+                    // Add them
+                    word.word ~= marks;
+
+                    // Add the word and add an empty word after
+                    nouns ~= [word, Word.init];
+
+
+                }
+
+                else nouns ~= word;
+
+            }
 
             // Reset the key
             key = "";
@@ -184,41 +196,6 @@ struct Ominbot {
         // Check if it holds a number
         try return inner.to!ulong;
         catch (ConvException) return 0;
-
-    }
-
-}
-
-private struct LimitInt(int min, int max) {
-
-    // Note: does not handle overflows
-
-    int value;
-    alias value this;
-
-    void opAssign(int other) {
-
-        value = clamp(other, min, max);
-
-    }
-
-    void opOpAssign(string op : "+")(int other) {
-
-        this = value + other;
-
-    }
-
-    void opOpAssign(string op : "-")(int other) {
-
-        this = value - other;
-
-    }
-
-    unittest {
-
-        LimitInt!(-3, 3) myInt;
-        myInt += 30;
-        assert(myInt == 3);
 
     }
 

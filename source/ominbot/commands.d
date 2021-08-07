@@ -68,6 +68,7 @@ bool runCommands(Ominbot* bot, string message, long channelID) {
 
         case "boost an image":
         case "yeet out an image":
+        case "yeet me an image":
         case "yeet an image":
         case "shoot shit":
             bot.longerSentences = true;
@@ -78,6 +79,10 @@ bool runCommands(Ominbot* bot, string message, long channelID) {
         case "hand over an image":
         case "send me an image":
         case "send an image":
+        case "make an image":
+        case "show an image":
+        case "show some meme":
+        case "make a meme":
         case "make something cool":
         case "it's meme time":
             bot.forceImage = true;

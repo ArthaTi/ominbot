@@ -9,14 +9,14 @@ enum MinWords = 2;  // The bot will not always respect this field
 enum MaxWords = 5;
 enum MaxBoostedWords = 30;
 enum BoostRarity = 100;
-enum WorstFit = 3;  // The bot will only consider top N matches for each word
+enum WorstFit = 6;  // The bot will only consider top N matches for each word
 enum HumorLimit = 50;
-enum RandomEventFrequency = 5.minutes;
+enum RandomEventFrequency = 120.minutes;
 
 // Note: lower values give a higher chance.
-enum InitialReplyRarity = 150;
-enum ActiveReplyRarity = 50;
-enum RestoreReplyRarityPerMinute = 30;
+enum InitialReplyRarity = 600;
+enum ActiveReplyRarity = 200;
+enum RestoreReplyRarityPerMinute = 50;
 
 enum ImagePostingRarity = 100;
 enum ImageMaxFrequencyBoost = 10;  // Send images up to N times more frequently on random responses (if close to initial

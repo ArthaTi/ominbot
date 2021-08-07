@@ -23,7 +23,7 @@ shared static this() {
     tmp.build("resources/bot-positive.txt", +1, true);
     tmp.build("resources/bot-negative.txt", -1, true);
 
-    // Save changes
+    // Optimize the dictionary
     tmp.words.rehash();
 
     updateWordList(cast(immutable) tmp);

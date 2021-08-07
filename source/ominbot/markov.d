@@ -10,6 +10,7 @@ import std.random;
 import std.algorithm;
 
 import ominbot.params;
+import ominbot.structs;
 import ominbot.word_lists;
 
 struct MarkovItem {
@@ -25,9 +26,9 @@ alias MarkovModel = MarkovEntry[string];
 
 // Note: empty word is treated as sentence end.
 
-void feed(ref MarkovModel model, Word[] words) {
+Phrase[] feed(ref MarkovModel model, Word[] words) {
 
-    if (words.length == 0) return;
+    if (words.length == 0) return [];
 
     model.require("", []).updateEntry([], words[0]);
 
@@ -39,17 +40,21 @@ void feed(ref MarkovModel model, Word[] words) {
             ? words[i+1]
             : Word.init;
 
-        // Ignore empty words
-        if (nextWord.word == "") continue;
-
+        // Get the current context
         const context = words[0 .. i+1]
             .tail(ContextSize)
             .map!"a.word"
             .array;
 
-        model.require(word.word, []).updateEntry(context, nextWord);
+        // Update the entry model
+        const occurences = model.require(word.word, []).updateEntry(context, nextWord);
+
+        // Yes
+        //occurences;
 
     }
+
+    return [];
 
 }
 
@@ -58,23 +63,29 @@ string[] generate(ref MarkovModel model, int humor, int wordCount, string[] cont
     auto list = getWordList();
 
     string[] output;
+    size_t pushedWords;  // Word count, excluding empty words
 
     // Initialize with sentence start context
     auto entry = model[""];
 
+    // Try to steal a word from the context
+    void stealWord() {
+
+        // Check if there is a context to begin with
+        if (!context.length) return;
+
+        const index = uniform(0, context.length);
+
+        // Fail chance is probably pretty big unless the prompt uses only nouns
+        // Hence this is a rather safe operation and there's still a big chance to reuse the word
+        entry = model.get(context[index], entry);
+        context = context.remove(index);
+
+    }
+
     string getWord() {
 
-        // Try to steal a word from the context
-        if (context.length) {
-
-            const index = uniform(0, context.length);
-
-            // Fail chance is probably pretty big unless the prompt uses only nouns
-            // Hence this is a rather safe operation and there's still a big chance to reuse the word
-            entry = model.get(context[index], entry);
-            context = context.remove(index);
-
-        }
+        if (!uniform(0, 4)) stealWord();
 
         return entry.getBestItem(output, humor).nextWord.word;
 
@@ -88,7 +99,11 @@ string[] generate(ref MarkovModel model, int humor, int wordCount, string[] cont
 
     }
 
-    while (output.length < wordCount) {
+    // Try to steal a word from the context for the start.
+    stealWord();
+
+    // Try getting the data
+    while (pushedWords < wordCount) {
 
         // The more emotional, the higher should be the chance
         if (abs(humor) > uniform(0, HumorLimit * 3)) {
@@ -96,13 +111,34 @@ string[] generate(ref MarkovModel model, int humor, int wordCount, string[] cont
             // Pick a random word
             output ~= randomWord();
 
+            pushedWords++;
+
         }
 
         // Otherwise trigger markov
         else output ~= getWord();
 
+
+        auto lastWord = output[$-1];
+
+        // Added an empty word
+        if (lastWord == "") {
+
+            // Try to get the previous word instead
+            if (output.length > 1) {
+
+                lastWord = output[$-2];
+
+            }
+
+        }
+
+        // Count the word
+        else pushedWords++;
+
+
         // Add to context
-        if (auto part = output[$-1] in model) {
+        if (auto part = lastWord in model) {
 
             entry = *part;
 
@@ -134,8 +170,7 @@ string[] generate(ref MarkovModel model, int humor, int wordCount, string[] cont
 }
 
 // Add
-private string[] amplify(bool recursive = false, T)(T input, int humor)
-if (isInputRange!T) {
+private string[] amplify(bool recursive = false)(string[] input, int humor) {
 
     string[] result;
 
@@ -146,6 +181,25 @@ if (isInputRange!T) {
 
         // Capitalize first word, unless sad
         if (i == 0 && humor > -HumorLimit/3) word = word.asCapitalized.to!string;
+
+        // Got an empty word
+        if (word == "") {
+
+            // Ignore if it's the first word
+            if (result.length == 0) continue;
+
+            // Ignore if the last word already ends with punctuation
+            if (!result[$-1][$-1].isAlphaNum) continue;
+
+            // Add a comma (or dot, if last) to the previous word
+            result[$-1] ~= i+1 == input.length
+                ? "."
+                : ",";
+
+            // Skip it, don't add it
+            continue;
+
+        }
 
         result ~= "";
 
@@ -159,7 +213,7 @@ if (isInputRange!T) {
             if (letter == '!') excl = true;
 
             // Screaming!
-            else if (scream && uniform(0, 5) <= scramble) {
+            if (scream && uniform(0, 5) <= scramble) {
 
                 result[$-1] ~= letter.toUpper;
 
@@ -198,26 +252,22 @@ private MarkovItem getBestItem(ref MarkovEntry entry, string[] context, int humo
 
 }
 
-private void updateEntry(ref MarkovEntry entry, const string[] context, Word nextWord) {
-
-    bool found;
+/// Update the entry in the model.
+/// Params: Occurences of the matching entry in the model, including the current match.
+private size_t updateEntry(ref MarkovEntry entry, const string[] context, Word nextWord) {
 
     // Find an item with a matching context
     foreach (ref item; entry) {
 
         if (nextWord != item.nextWord && context != item.context) continue;
 
-        found = true;
-        //item.occurences += 1;
-        break;
+        return item.occurences += 1;
 
     }
 
     // Didn't find any, add one
-    if (!found) {
+    entry ~= MarkovItem(context.dup, 1, nextWord);
 
-        entry ~= MarkovItem(context.dup, 1, nextWord);
-
-    }
+    return 1;
 
 }
