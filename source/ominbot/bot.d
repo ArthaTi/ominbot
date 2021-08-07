@@ -82,6 +82,9 @@ struct Ominbot {
 
         void pushWord() {
 
+            // Reset the key once done
+            scope (exit) key = "";
+
             string marks;
 
             // Find pings
@@ -130,9 +133,6 @@ struct Ominbot {
                 else nouns ~= word;
 
             }
-
-            // Reset the key
-            key = "";
 
         }
 

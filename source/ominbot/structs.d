@@ -2,10 +2,13 @@ module ominbot.structs;
 
 import std.algorithm;
 
+import ominbot.markov;
+
 alias MessageSentiment = LimitInt!(-3, 3);
 
 struct FeedingResult {  // also called "shit"
 
+    /// Sentiment of the given message.
     MessageSentiment sentiment;
 
     /// Frequently used phrases which appear in this message.
@@ -13,14 +16,13 @@ struct FeedingResult {  // also called "shit"
 
 }
 
-/// Marks a frequent phrase.
 struct Phrase {
 
     /// Words in the phrase.
     string[] words;
 
-    /// Weight of the phrase.
-    size_t weight;
+    /// Number of occurences of the phrase.
+    size_t occurences;
 
 }
 

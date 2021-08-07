@@ -6,6 +6,7 @@ import vibe.http.client;
 import vibe.inet.urltransfer;
 
 import std.stdio;
+import std.range;
 import std.format;
 import std.random;
 import std.string;
@@ -15,6 +16,7 @@ import std.container;
 import ominbot.bot;
 import ominbot.image;
 import ominbot.params;
+import ominbot.structs;
 import ominbot.commands;
 import ominbot.random_event;
 
@@ -77,7 +79,7 @@ class OminbotPlugin : Plugin {
         activeChannels.insert(event.message.channel.id);
 
         // Feed the bot
-        const input = bot.feed(event.message.content, (ulong id) {
+        auto input = bot.feed(event.message.content, (ulong id) {
 
             // Pinged!
             if (id != me.id) return;
@@ -86,7 +88,24 @@ class OminbotPlugin : Plugin {
 
         });
 
+        // Update the sentiment
         bot.humor += input.sentiment * (forceSend ? 2 : 1);
+
+        // Max occurency count of a phrase
+        float maxOccurences;
+
+        // Sort the phrases by priority
+        auto bestPhrases = input.phrases
+            .sort!((a, b) => a.occurences > b.occurences)
+            .filter!(a => a.occurences > PhraseMinOccurences)
+            .tee!(a => maxOccurences = max(a.occurences, maxOccurences))
+            .array;
+
+        // Remove relatively low quality phrases
+        bestPhrases = bestPhrases
+            .filter!(a => a.occurences / maxOccurences >= MinRelativeOccurences)
+            .map!(a => Phrase(a.words.filter!"a.length".array, a.occurences))
+            .array;
 
         // If there is a png attached
         foreach (attachment; event.message.attachments) {
@@ -149,8 +168,17 @@ class OminbotPlugin : Plugin {
 
             }
 
+            alias phraseDebug = a => format!"*%-(%s %)* %s"(a.words, a.occurences);
+
+            // Highlight best input phrases
+            debug const debugData = bestPhrases.length
+                ? format!"> %-(%s, %)\n"(bestPhrases.map!phraseDebug)
+                : "";
+
+            else const debugData = "";
+
             // Get a message
-            const result = bot.statusUpdate(event.message.content).join(" ");
+            const result = debugData ~ bot.statusUpdate(event.message.content).join(" ");
 
             // Post a text reply
             event.message.reply(result);

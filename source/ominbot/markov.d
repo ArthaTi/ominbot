@@ -8,6 +8,7 @@ import std.stdio;
 import std.range;
 import std.random;
 import std.algorithm;
+import std.container;
 
 import ominbot.params;
 import ominbot.structs;
@@ -15,9 +16,13 @@ import ominbot.word_lists;
 
 struct MarkovItem {
 
-    string[] context;
-    uint occurences;
     Word nextWord;
+
+    /// Words that come before the item in the context.
+    RedBlackTree!string before;
+
+    /// Occurence count of an exact preceding phrase, including the next word.
+    uint[string[]] occurences;
 
 }
 
@@ -26,11 +31,13 @@ alias MarkovModel = MarkovEntry[string];
 
 // Note: empty word is treated as sentence end.
 
+/// Returns: Occurence numbers for each discovered phrase.
 Phrase[] feed(ref MarkovModel model, Word[] words) {
 
     if (words.length == 0) return [];
 
-    model.require("", []).updateEntry([], words[0]);
+    Phrase[] result;
+    result ~= model.require("", []).updateEntry([], words[0]);
 
     foreach (i, word; words) {
 
@@ -41,20 +48,19 @@ Phrase[] feed(ref MarkovModel model, Word[] words) {
             : Word.init;
 
         // Get the current context
-        const context = words[0 .. i+1]
+        auto context = words[0 .. i+1]
             .tail(ContextSize)
             .map!"a.word"
+            .filter!"a.length"
             .array;
 
         // Update the entry model
-        const occurences = model.require(word.word, []).updateEntry(context, nextWord);
-
-        // Yes
-        //occurences;
+        result ~= model.require(word.word, [])
+            .updateEntry(context, nextWord);
 
     }
 
-    return [];
+    return result;
 
 }
 
@@ -93,9 +99,9 @@ string[] generate(ref MarkovModel model, int humor, int wordCount, string[] cont
 
     string randomWord() {
 
-        if     (humor >= 0) return list.positive[].choice;
-        else if (humor < 0) return list.negative[].choice;
-        else assert(false);
+        return humor >= 0
+            ? list.positive[].choice
+            : list.negative[].choice;
 
     }
 
@@ -235,9 +241,9 @@ private string[] amplify(bool recursive = false)(string[] input, int humor) {
 private MarkovItem getBestItem(ref MarkovEntry entry, string[] context, int humor) {
 
     auto sorted = entry.schwartzSort!(
-        (MarkovItem a) => log2(a.occurences)
-            * (HumorLimit  + a.nextWord.sentiment * humor)
-            * (ContextSize - levenshteinDistance(a.context, context)),
+        (MarkovItem a) => log2(a.occurences.get(context, 0))
+            * (HumorLimit + a.nextWord.sentiment * humor)
+            * setIntersection(a.before[], context.sort.filter!"a.length").walkLength,
         "a > b"
     );
 
@@ -253,21 +259,40 @@ private MarkovItem getBestItem(ref MarkovEntry entry, string[] context, int humo
 }
 
 /// Update the entry in the model.
-/// Params: Occurences of the matching entry in the model, including the current match.
-private size_t updateEntry(ref MarkovEntry entry, const string[] context, Word nextWord) {
+/// Returns: The most common phrase, which is a substring of context, occuring within the model.
+private Phrase updateEntry(ref MarkovEntry entry, string[] context, Word nextWord)
+in (context.all!"a.length", "updateEntry context cannot have empty words")
+do {
+
+    // Full text chain, including the next word
+    auto chain = context ~ nextWord.word;
 
     // Find an item with a matching context
     foreach (ref item; entry) {
 
-        if (nextWord != item.nextWord && context != item.context) continue;
+        if (nextWord != item.nextWord) continue;
 
-        return item.occurences += 1;
+        item.before.insert(context);
+
+        // Find the most frequent substring
+        Phrase best;
+        foreach (i; 0..chain.length) {
+
+            const count = ++item.occurences.require(context[i..$], 0);
+
+            // Found the new king
+            // Note, we're taking a small number because the next word will always have >= occurences
+            if (count*1/4 > best.occurences) best = Phrase(chain[i..$], count);
+
+        }
+        return best;
 
     }
 
     // Didn't find any, add one
-    entry ~= MarkovItem(context.dup, 1, nextWord);
+    auto item = MarkovItem(nextWord, redBlackTree(context), [context: 1]);
+    entry ~= item;
 
-    return 1;
+    return Phrase(chain, 1);
 
 }
