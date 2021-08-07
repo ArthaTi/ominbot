@@ -104,7 +104,10 @@ struct Ominbot {
 
             if (!key.length) return;
 
-            auto word = list.findWord(key);
+            // Let numbers under 4 digits in
+            auto word = key.isNumeric && key.length <= 4
+                ? Word(key, 0, 1)
+                : list.findWord(key);
 
             // Update sentiment
             inputSentiment += word.sentiment;
