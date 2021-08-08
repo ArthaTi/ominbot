@@ -55,6 +55,7 @@ struct Ominbot {
         auto words = context.length
             ?  getNouns(context)
                 .map!"a.word"
+                .filter!"a.length"
                 .array
             : [];
 
@@ -131,6 +132,13 @@ struct Ominbot {
                 }
 
                 else nouns ~= word;
+
+            }
+
+            // This isn't a noun. But we don't care.
+            debug (CoherentOmin) {
+
+                nouns ~= word;
 
             }
 

@@ -9,13 +9,13 @@ enum MinWords = 2;  // The bot will not always respect this field
 enum MaxWords = 5;
 enum MaxBoostedWords = 30;
 enum BoostRarity = 100;
-enum WorstFit = 6;  // The bot will only consider top N matches for each word
+enum WorstFit = 3;  // The bot will only consider top N matches for each word
 enum HumorLimit = 50;
 enum RandomEventFrequency = 120.minutes;
 
 // For prompt matching; minimum number of occurences of a phrase to have it be considered by the bot
-enum PhraseMinOccurences = 0;
-enum MinRelativeOccurences = 0;  // Float [0..1]
+enum PhraseMinOccurences = 10;
+enum MinRelativeOccurences = 0.4;  // Float [0..1]
 
 // Note: lower values give a higher chance.
 enum InitialReplyRarity = 600;

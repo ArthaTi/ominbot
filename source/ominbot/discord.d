@@ -104,7 +104,10 @@ class OminbotPlugin : Plugin {
         // Remove relatively low quality phrases
         bestPhrases = bestPhrases
             .filter!(a => a.occurences / maxOccurences >= MinRelativeOccurences)
+
+            // Remove empty words and phrases
             .map!(a => Phrase(a.words.filter!"a.length".array, a.occurences))
+            .filter!"a.words.length"
             .array;
 
         // If there is a png attached
@@ -177,8 +180,14 @@ class OminbotPlugin : Plugin {
 
             else const debugData = "";
 
+            /// Get the context
+            auto context = bestPhrases
+                .map!"a.words"
+                .join
+                .join(" ");
+
             // Get a message
-            const result = debugData ~ bot.statusUpdate(event.message.content).join(" ");
+            const result = debugData ~ bot.statusUpdate(context).join(" ");
 
             // Post a text reply
             event.message.reply(result);

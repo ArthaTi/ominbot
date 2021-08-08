@@ -82,6 +82,9 @@ string[] generate(ref MarkovModel model, int humor, int wordCount, string[] cont
 
         const index = uniform(0, context.length);
 
+        import std.stdio : writefln;
+        writefln!"stealing word %s from context %s"(context[index], context);
+
         // Fail chance is probably pretty big unless the prompt uses only nouns
         // Hence this is a rather safe operation and there's still a big chance to reuse the word
         entry = model.get(context[index], entry);
@@ -90,8 +93,6 @@ string[] generate(ref MarkovModel model, int humor, int wordCount, string[] cont
     }
 
     string getWord() {
-
-        if (!uniform(0, 4)) stealWord();
 
         return entry.getBestItem(output, humor).nextWord.word;
 
@@ -112,12 +113,10 @@ string[] generate(ref MarkovModel model, int humor, int wordCount, string[] cont
     while (pushedWords < wordCount) {
 
         // The more emotional, the higher should be the chance
-        if (abs(humor) > uniform(0, HumorLimit * 3)) {
+        if (abs(humor) > uniform(HumorLimit, HumorLimit * 5)) {
 
             // Pick a random word
             output ~= randomWord();
-
-            pushedWords++;
 
         }
 
@@ -148,22 +147,21 @@ string[] generate(ref MarkovModel model, int humor, int wordCount, string[] cont
 
             entry = *part;
 
-            // Add a chance to skip a word
-            if (uniform(0, 3) == 0) {
-
-                auto newPart = getWord() in model;
-                entry = newPart ? *newPart : *part;
-
-            }
-
             continue;
 
         }
 
-        // Found no words, try to use a random word
-        if (auto part = randomWord() in model) {
+        //
+        break;
 
-            entry = *part;
+        version (none) {
+
+            // Found no words, try to use a random word
+            if (auto part = randomWord() in model) {
+
+                entry = *part;
+
+            }
 
         }
 
@@ -242,8 +240,8 @@ private MarkovItem getBestItem(ref MarkovEntry entry, string[] context, int humo
 
     auto sorted = entry.schwartzSort!(
         (MarkovItem a) => log2(a.occurences.get(context, 0))
-            * (HumorLimit + a.nextWord.sentiment * humor)
-            * setIntersection(a.before[], context.sort.filter!"a.length").walkLength,
+            + (HumorLimit + a.nextWord.sentiment * humor) * 2 / HumorLimit
+            + 3 * setIntersection(a.before[], context.sort.filter!"a.length").walkLength,
         "a > b"
     );
 
