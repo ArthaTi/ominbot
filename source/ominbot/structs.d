@@ -26,6 +26,9 @@ struct Phrase {
 
 struct LimitInt(int min, int max) {
 
+    enum minValue = min;
+    enum maxValue = max;
+
     // Note: does not handle overflows
 
     int value;

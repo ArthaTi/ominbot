@@ -97,7 +97,7 @@ shared static this() {
 
 /// Mutilate an image.
 /// Returns: True if done.
-bool mutilateImage(ref Ominbot bot, string baseImage = null) {
+bool mutilateImage(ref Ominbot bot) {
 
     auto imageURL = bot.nextImageURL;
     bot.nextImageURL = null;
@@ -118,13 +118,28 @@ bool mutilateImage(string[] top, string[] bottom, string baseImage = null) {
     writefln!"Beginning mutilation...";
 
     // Load the main image
-    auto image = baseImage ? loadPNG(baseImage) : randomImage();
+    SuperImage image;
+
+    try {
+
+        auto tryImage = baseImage ? loadPNG(baseImage) : randomImage();
+        image = tryImage;
+
+    } catch (ImageLoadException exc) {
+
+        top = bottom = ["fool", "fool", "fool"];
+        image = randomImage();
+
+    }
+
+    if (!image) return false;
 
     // Add a few images to mutilate
     foreach (num; 0 .. uniform(ImageMinForegroundItems, ImageMaxForegroundItems)) {
 
         // Load the images
         auto sample = randomImage();
+        if (!sample) break;
 
         // Prepare transforms
         const scale = cast(float) image.width / sample.width / 2;
