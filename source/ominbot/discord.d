@@ -153,7 +153,7 @@ class OminbotPlugin : Plugin {
             }
 
             // Give a chance to perform a hit
-            if (uniform(0, HitRarity) == 0) {
+            if (uniform(0, HitRarity / frequencyBoost) == 0) {
 
                 writefln!"attemping hit!";
 
@@ -161,8 +161,11 @@ class OminbotPlugin : Plugin {
 
             }
 
-            // Give a chance to start a non-image hit
-            if (uniform!"[]"(worstSentiment, input.sentiment) == worstSentiment) {
+            const targetRarityBoost = AddTargetRarity / frequencyBoost;
+            const currentTargetRarity = (input.sentiment - input.sentiment.minValue) * targetRarityBoost;
+
+            // Give a chance to add a new target out of nowhere
+            if (uniform!"[]"(0, currentTargetRarity) == 0) {
 
                 addHitTarget(event.message.author.id);
 
@@ -244,7 +247,7 @@ class OminbotPlugin : Plugin {
                 writefln!"step 3: setting method...";
                 req.method = HTTPMethod.POST;
 
-                writefln!"step 4: creating form...";
+                writefln!"step 4: creating form... %s"(encoded);
                 req.writeFormBody([
                     "image": encoded
                 ]);

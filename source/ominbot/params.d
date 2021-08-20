@@ -12,6 +12,7 @@ enum BoostRarity = 100;
 enum WorstFit = 6;  // The bot will only consider top N matches for each word
 enum HumorLimit = 50;
 enum RandomEventFrequency = 120.minutes;
+enum AddTargetRarity = 25;
 enum HitRarity = 80;
 enum HitKillRarity = 6;  // instead of 1/n, this is m/n where m is number of hits done, including this
 
