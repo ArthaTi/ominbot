@@ -16,11 +16,17 @@ final class Ominbot : Bot {
 
     SysTime lastEvent;
 
-    void get(string messageText, string author, string channel) {
+    override void pushEvent(Event) {
 
     }
 
-    Event[] poll() {
+    override void requestResponse() {
+
+
+
+    }
+
+    override Event[] poll() {
 
         const time = Clock.currTime;
 

@@ -15,14 +15,27 @@ else static assert("DO YOU HAVE DUMB? YOUR OS BAD.");
 
 struct Event {
 
+    /// ID of user targeted by this message. `0` if no user is targeted.
+    ulong targetUser;
+
+    /// ID of the server this message should be sent to.
+    ulong targetServer;
+
+    /// ID of the channel this message should be sent to.
+    ulong targetChannel;
+
+    /// Message Omin wants to send.
     string messageText;
 
 }
 
 interface Bot {
 
-    /// Notify the bot of a new message in a channel.
-    void get(string messageText, string author, string channel);
+    /// Notify the bot of an event within the channel.
+    void pushEvent(Event event);
+
+    /// Request an instance response from the bot.
+    void requestResponse();
 
     /// Poll the bot for new events.
     Event[] poll();
