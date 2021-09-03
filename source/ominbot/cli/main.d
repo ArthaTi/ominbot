@@ -1,21 +1,15 @@
-module ominbot.cli;
+module ominbot.cli.main;
 
 import std.stdio;
-import core.runtime;
+import std.datetime;
 
-import ominbot.core.loader;
+import core.thread;
+
+import ominbot.launcher;
 
 
 @safe:
 
-
-static this() @system {
-
-    version (linux) Runtime.loadLibrary("build/libominbot_core.so");
-
-    else static assert("DO YOU HAVE DUMB YOUR OS BAD");
-
-}
 
 
 void progress(string name)(ubyte percent) {
@@ -31,6 +25,18 @@ void main() {
     loader.dictionaryProgress = (a) => a.progress!"dictionary";
     loader.modelProgress = (a) => a.progress!"model";
 
-    loader.load();
+    while (true) {
+
+        auto bot = loader.update();
+
+        auto events = bot.poll();
+
+        () @trusted {
+
+            Thread.sleep(0.seconds);
+
+        }();
+
+    }
 
 }

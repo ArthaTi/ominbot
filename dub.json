@@ -12,7 +12,9 @@
 				"dlib": "~>0.22.0",
 				"rcdata": ">=1.0.0-alpha.2 <1.1.0-0"
 			},
-			"sourcePaths": ["source/ominbot/core"]
+			"dflags": ["-defaultlib=libphobos2.so"],
+			"sourcePaths": ["source/ominbot/core"],
+			"sourceFiles": ["source/ominbot/launcher.d"]
 		},
 		{
 			"name": "discord",
@@ -21,13 +23,16 @@
 			"dependencies": {
 				"dcord": ">=0.0.0"
 			},
+			"dflags": ["-defaultlib=libphobos2.so"],
 			"sourcePaths": ["source/ominbot/discord"]
 		},
 		{
 			"name": "cli",
 			"targetPath": "build",
 			"targetType": "executable",
-			"sourcePaths": ["source/ominbot/cli"]
+			"dflags": ["-defaultlib=libphobos2.so"],
+			"sourcePaths": ["source/ominbot/cli"],
+			"sourceFiles": ["source/ominbot/launcher.d"]
 		}
 	],
 	"includePaths": ["source", "include"],
