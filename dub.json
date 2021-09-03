@@ -3,14 +3,38 @@
 		"Soaku"
 	],
 	"copyright": "Copyright © 2021, Soaku",
-	"dependencies": {
-		"dcord": ">=0.0.0",
-		"dlib": "~>0.22.0",
-		"rcdata": ">=1.0.0-alpha.2 <1.1.0-0"
-	},
+	"subPackages": [
+		{
+			"name": "core",
+			"targetPath": "build",
+			"targetType": "dynamicLibrary",
+			"dependencies": {
+				"dlib": "~>0.22.0",
+				"rcdata": ">=1.0.0-alpha.2 <1.1.0-0"
+			},
+			"sourcePaths": ["source/ominbot/core"]
+		},
+		{
+			"name": "discord",
+			"targetPath": "build",
+			"targetType": "executable",
+			"dependencies": {
+				"dcord": ">=0.0.0"
+			},
+			"sourcePaths": ["source/ominbot/discord"]
+		},
+		{
+			"name": "cli",
+			"targetPath": "build",
+			"targetType": "executable",
+			"sourcePaths": ["source/ominbot/cli"]
+		}
+	],
+	"includePaths": ["source", "include"],
 	"description": "ominious bot",
 	"license": "GPL-3.0",
 	"name": "ominbot",
 	"targetPath": "build",
-	"targetType": "executable"
+	"targetType": "none"
+
 }
