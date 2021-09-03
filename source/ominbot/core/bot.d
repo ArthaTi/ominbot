@@ -5,6 +5,9 @@ import std.datetime;
 
 import ominbot.launcher;
 
+import ominbot.core.map;
+import ominbot.core.params;
+
 static this() {
 
     // Load the bot in
@@ -15,8 +18,11 @@ static this() {
 final class Ominbot : Bot {
 
     SysTime lastEvent;
+    RelationMap!mapHeight map;
 
-    override void pushEvent(Event) {
+    override void pushEvent(Event event) {
+
+        map.feed(event.messageText);
 
     }
 
