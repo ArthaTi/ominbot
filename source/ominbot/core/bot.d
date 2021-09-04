@@ -20,6 +20,12 @@ final class Ominbot : Bot {
     SysTime lastEvent;
     RelationMap!mapHeight map;
 
+    this() {
+
+        map = new RelationMap!mapHeight;
+
+    }
+
     override void pushEvent(Event event) {
 
         map.feed(event.messageText);

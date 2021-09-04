@@ -17,8 +17,11 @@ struct MapEntry {
     /// If true, this entry represents a single noun.
     bool noun;
 
-    /// Occurence count
+    /// Occurence count.
     ulong occurences;
+
+    /// Sentiment of the entry.
+    short sentiment;
 
     /// Check if the entry is empty or not.
     bool opCast(T : bool)() const {
@@ -70,6 +73,8 @@ final class RelationMap(size_t height) {
         // Move to the middle of the map
         position = OminPosition(mapLookupRadius, height / 2);
 
+        writefln!"starting at position %s"(position);
+
     }
 
     /// Feed text into the model to let it learn.
@@ -80,7 +85,7 @@ final class RelationMap(size_t height) {
         // Add each word into the model
         foreach (word; words) {
 
-            addPhrase(word);
+            addPhrase(MapEntry(word, false, 1, 0));
 
         }
 
@@ -88,7 +93,7 @@ final class RelationMap(size_t height) {
 
     /// Lookup the phrase within the model. Increment its occurence count and move closer to the middle, or add it if
     /// it wasn't found.
-    void addPhrase(string phrase) {
+    void addPhrase(MapEntry phrase) {
 
         import std.array;
 
@@ -101,10 +106,10 @@ final class RelationMap(size_t height) {
         auto maxY = min(position.y + radius + 1, height);
 
         // Unoccupied slots found on the map
-        auto freeSlots = appender!(MapEntry*[]);
+        auto freeSlots = appender!(OminPosition[]);
 
         // Search for the phrase within the range
-        search: foreach (y; minY..maxY) {
+        foreach (y; minY..maxY) {
 
             foreach (x; minX..maxX) {
 
@@ -112,24 +117,27 @@ final class RelationMap(size_t height) {
                 auto entry = &columns[x][y];
 
                 // Save if the slot is free
-                if (!entry) {
+                if (!*entry) {
 
-                    freeSlots.put(entry);
+                    freeSlots.put(OminPosition(x, y));
                     continue;
 
                 }
 
                 // Found a match?
-                if (entry.text == phrase) {
+                if (entry.text == phrase.text) {
 
                     // Found a match, increment the entry
                     entry.occurences++;
+
+                    import std.stdio;
+                    writeln(phrase);
 
                     // Pull the entry
                     pullTogether(OminPosition(x, y));
 
                     // End searching
-                    break search;
+                    return;
 
                 }
 
@@ -138,6 +146,7 @@ final class RelationMap(size_t height) {
         }
 
         // Not found...
+        insertPhrase(phrase, freeSlots[]);
 
     }
 
@@ -190,7 +199,41 @@ final class RelationMap(size_t height) {
         // Move to the resulting position
         position = OminPosition(newPosX, newPosY);
 
-        writefln!"moved to position %s"(position);
+        writefln!"moving to position %s"(position);
+
+    }
+
+    /// Insert a phrase into the map.
+    private void insertPhrase(MapEntry phrase, OminPosition[] freeSlots) {
+
+        // No slots available
+        if (freeSlots.length == 0) {
+
+            // Insert a new column
+            columns = columns[0 .. position.x] ~ (MapEntry[height]).init ~ columns[position.x .. $];
+
+            // Register the slots
+            // TODO: respect rearrange range?
+            foreach (i, item; columns[position.x]) {
+
+                freeSlots ~= OminPosition(position.x, i);
+
+            }
+
+        }
+
+        // Sort by preference
+        // Phrases with a higher sentiment should prefer higher Y
+        auto selection = freeSlots.schwartzSort!(a => a.y - phrase.sentiment);
+
+        // Get top item
+        auto entryPos = selection.front;
+
+        // Replace it with this phrase
+        columns[entryPos.x][entryPos.y] = phrase;
+
+        writefln!"inserted at (%s, %s)"(entryPos.x, entryPos.y);
+
 
     }
 
@@ -199,10 +242,13 @@ final class RelationMap(size_t height) {
         import std.uni, std.conv, std.array, std.string;
 
         // Strip on whitespace
-        return text.splitWhen!((a, b) => a.isAlpha)
+        return text.splitWhen!((a, b) => a.isWhite)
 
             // Remove the whitespace from the result
             .map!(a => a.array.strip.to!string)
+
+            // Remove empty items
+            .filter!(a => a.length)
             .array;
 
     }

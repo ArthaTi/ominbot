@@ -14,6 +14,7 @@
 			},
 			"dflags": ["-defaultlib=libphobos2.so"],
 			"sourcePaths": ["source/ominbot/core"],
+			"includePaths": ["source/ominbot/core"],
 			"sourceFiles": ["source/ominbot/launcher.d"]
 		},
 		{
@@ -24,7 +25,9 @@
 				"dcord": ">=0.0.0"
 			},
 			"dflags": ["-defaultlib=libphobos2.so"],
-			"sourcePaths": ["source/ominbot/discord"]
+			"sourcePaths": ["source/ominbot/discord"],
+			"includePaths": ["source/ominbot/discord"],
+			"sourceFiles": ["source/ominbot/launcher.d"]
 		},
 		{
 			"name": "cli",
@@ -32,14 +35,13 @@
 			"targetType": "executable",
 			"dflags": ["-defaultlib=libphobos2.so"],
 			"sourcePaths": ["source/ominbot/cli"],
+			"includePaths": ["source/ominbot/cli"],
 			"sourceFiles": ["source/ominbot/launcher.d"]
 		}
 	],
-	"includePaths": ["source", "include"],
 	"description": "ominious bot",
 	"license": "GPL-3.0",
 	"name": "ominbot",
 	"targetPath": "build",
 	"targetType": "none"
-
 }
