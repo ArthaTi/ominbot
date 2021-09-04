@@ -15,8 +15,9 @@ else static assert("DO YOU HAVE DUMB? YOUR OS BAD.");
 
 struct Event {
 
-    /// ID of user targeted by this message. `0` if no user is targeted.
-    ulong targetUser;
+    /// ID of user targeted by this message, if sent by the bot, or ID of the user who sent this message, if directed
+    /// back at the bot. `0` if no user is targeted.
+    ulong user;
 
     /// ID of the server this message should be sent to.
     ulong targetServer;
@@ -39,6 +40,9 @@ interface Bot {
 
     /// Poll the bot for new events.
     Event[] poll();
+
+    /// Make the target user admin.
+    void setAdmin(ulong id);
 
 }
 

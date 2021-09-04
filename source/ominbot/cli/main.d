@@ -35,11 +35,12 @@ void main() {
     while (true) {
 
         auto bot = loader.update();
+        bot.setAdmin(1);
 
         // Process events
         foreach (event; bot.poll) {
 
-            writefln!"to(%s) in(%s/%s)\n%s"(event.targetUser, event.targetServer, event.targetChannel,
+            writefln!"to(%s) in(%s/%s)\n%s"(event.user, event.targetServer, event.targetChannel,
                 event.messageText);
 
         }
@@ -56,8 +57,10 @@ bool readPrompt(Bot bot) {
 
     try {
 
+        enum CSI = "\x1B\x5B";
+
         // Request a from the user
-        writef!"omin# ";
+        writef!"%somin%s# "(CSI ~ "32m", CSI ~ "m");
         const msg = (() @trusted => readln())();
 
         // Stop if given EOL
