@@ -3,45 +3,61 @@
 		"Soaku"
 	],
 	"copyright": "Copyright © 2021, Soaku",
-	"subPackages": [
-		{
-			"name": "core",
-			"targetPath": "build",
-			"targetType": "dynamicLibrary",
-			"dependencies": {
-				"dlib": "~>0.22.0",
-				"rcdata": ">=1.0.0-alpha.2 <1.1.0-0"
-			},
-			"dflags": ["-defaultlib=libphobos2.so"],
-			"sourcePaths": ["source/ominbot/core"],
-			"includePaths": ["source/ominbot/core"],
-			"sourceFiles": ["source/ominbot/launcher.d"]
-		},
-		{
-			"name": "discord",
-			"targetPath": "build",
-			"targetType": "executable",
-			"dependencies": {
-				"dcord": ">=0.0.0"
-			},
-			"dflags": ["-defaultlib=libphobos2.so"],
-			"sourcePaths": ["source/ominbot/discord"],
-			"includePaths": ["source/ominbot/discord"],
-			"sourceFiles": ["source/ominbot/launcher.d"]
-		},
-		{
-			"name": "cli",
-			"targetPath": "build",
-			"targetType": "executable",
-			"dflags": ["-defaultlib=libphobos2.so"],
-			"sourcePaths": ["source/ominbot/cli"],
-			"includePaths": ["source/ominbot/cli"],
-			"sourceFiles": ["source/ominbot/launcher.d"]
-		}
-	],
 	"description": "ominious bot",
 	"license": "GPL-3.0",
 	"name": "ominbot",
+	"subPackages": [
+		{
+			"dependencies": {
+				"dlib": "~>0.22.0",
+				"elemi": "~>1.0.1",
+				"rcdata": ">=1.0.0-alpha.2 <1.1.0-0"
+			},
+			"dflags": [
+				"-defaultlib=libphobos2.so"
+			],
+			"name": "core",
+			"sourceFiles": [
+				"source/ominbot/launcher.d"
+			],
+			"sourcePaths": [
+				"source/ominbot/core"
+			],
+			"targetPath": "build",
+			"targetType": "dynamicLibrary"
+		},
+		{
+			"dependencies": {
+				"dcord": ">=0.0.0"
+			},
+			"dflags": [
+				"-defaultlib=libphobos2.so"
+			],
+			"name": "discord",
+			"sourceFiles": [
+				"source/ominbot/launcher.d"
+			],
+			"sourcePaths": [
+				"source/ominbot/discord"
+			],
+			"targetPath": "build",
+			"targetType": "executable"
+		},
+		{
+			"dflags": [
+				"-defaultlib=libphobos2.so"
+			],
+			"name": "cli",
+			"sourceFiles": [
+				"source/ominbot/launcher.d"
+			],
+			"sourcePaths": [
+				"source/ominbot/cli"
+			],
+			"targetPath": "build",
+			"targetType": "executable"
+		}
+	],
 	"targetPath": "build",
 	"targetType": "none"
 }

@@ -91,55 +91,73 @@ final class RelationMap(size_t height) {
 
     }
 
+    auto scan(size_t radius = mapLookupRadius) {
+
+        // Get the range
+        const minX = max(position.x - radius, 0);
+        const minY = max(position.y - radius, 0);
+        const maxX = min(position.x + radius + 1, columns.length);
+        const maxY = min(position.y + radius + 1, height);
+
+        struct MapIterator {
+
+            RelationMap!height map;
+
+            int opApply(int delegate(size_t x, size_t y, MapEntry* entry) @safe dg) {
+
+                foreach (y; minY..maxY) {
+
+                    foreach (x; minX..maxX) {
+
+                        auto entry = &map.columns[x][y];
+
+                        if (auto ret = dg(x, y, entry)) return ret;
+
+                    }
+
+                }
+
+                return 0;
+
+            }
+
+        }
+
+        return MapIterator(this);
+
+    }
+
     /// Lookup the phrase within the model. Increment its occurence count and move closer to the middle, or add it if
     /// it wasn't found.
     void addPhrase(MapEntry phrase) {
 
         import std.array;
 
-        const radius = mapRearrangeRadius;
-
-        // Get the rearrange range
-        auto minX = max(position.x - radius, 0);
-        auto minY = max(position.y - radius, 0);
-        auto maxX = min(position.x + radius + 1, columns.length);
-        auto maxY = min(position.y + radius + 1, height);
-
         // Unoccupied slots found on the map
         auto freeSlots = appender!(OminPosition[]);
 
         // Search for the phrase within the range
-        foreach (y; minY..maxY) {
+        foreach (x, y, entry; scan(mapRearrangeRadius)) {
 
-            foreach (x; minX..maxX) {
+            // Save if the slot is free
+            if (!*entry) {
 
-                // Get the entry at this spot
-                auto entry = &columns[x][y];
+                freeSlots.put(OminPosition(x, y));
+                continue;
 
-                // Save if the slot is free
-                if (!*entry) {
+            }
 
-                    freeSlots.put(OminPosition(x, y));
-                    continue;
+            // Found a match?
+            if (entry.text == phrase.text) {
 
-                }
+                // Found a match, increment the entry
+                entry.occurences++;
 
-                // Found a match?
-                if (entry.text == phrase.text) {
+                // Pull the entry
+                pullTogether(OminPosition(x, y));
 
-                    // Found a match, increment the entry
-                    entry.occurences++;
-
-                    import std.stdio;
-                    writeln(phrase);
-
-                    // Pull the entry
-                    pullTogether(OminPosition(x, y));
-
-                    // End searching
-                    return;
-
-                }
+                // End searching
+                return;
 
             }
 
@@ -164,6 +182,7 @@ final class RelationMap(size_t height) {
         if (target.y < newPosY) {
 
             // Remove the entry
+            // TODO range violation?
             columns[target.x] = column[0 .. target.y] ~ column[target.y+1 .. newPosY]
 
                 // Add it again at the target position
@@ -178,7 +197,7 @@ final class RelationMap(size_t height) {
             columns[target.x] = column[0 .. newPosY] ~ entry
 
                 // Remove the old target
-                ~ column[newPosY .. target.y] ~ column[target.y .. $];
+                ~ column[newPosY .. target.y] ~ column[target.y+1 .. $];
 
         }
 

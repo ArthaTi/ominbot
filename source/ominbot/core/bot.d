@@ -25,6 +25,7 @@ final class Ominbot : Bot {
     SysTime lastEvent;
     RelationMap!mapHeight map;
     bool[ulong] admins;
+    Event[] eventQueue;
 
     this() {
 
@@ -37,7 +38,7 @@ final class Ominbot : Bot {
         const admin = isAdmin(event.user);
 
         // Check for commands
-        if (this.runCommands(admin, event.messageText)) return;
+        if (this.runCommands(event, admin)) return;
 
         map.feed(event.messageText);
 
@@ -60,7 +61,11 @@ final class Ominbot : Bot {
 
         }
 
-        return [];
+        // Move events from the queue to the result.
+        auto events = eventQueue;
+        eventQueue = null;
+
+        return events;
 
     }
 
