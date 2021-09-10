@@ -20,7 +20,7 @@ import ominbot.core.params;
 bool runCommands(Ominbot bot, Event input, bool admin) {
 
     // Check for prefix
-    if (!input.messageText.findSkip("omin, ")) return false;
+    if (!input.messageText.skipOver("omin, ")) return false;
 
     const command = input.messageText.strip;
 

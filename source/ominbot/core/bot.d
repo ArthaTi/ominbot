@@ -46,7 +46,8 @@ final class Ominbot : Bot {
 
     override void requestResponse() {
 
-
+        // TODO: choose a reasonable channel
+        eventQueue ~= Event(0, 1, 1, makeMessage);
 
     }
 
@@ -72,6 +73,34 @@ final class Ominbot : Bot {
     override void setAdmin(ulong id) {
 
         admins[id] = true;
+
+    }
+
+    string makeMessage() {
+
+        import std.array, std.random;
+
+        const wordCount = uniform!"[]"(2, 5);
+
+        string[] words;
+
+        while (words.length < wordCount) {
+
+            if (auto word = map.fetch(words.length)) {
+
+                words ~= word.text;
+
+            }
+
+            // No word found! Tragedy!
+            else break;
+
+        }
+
+        // No words at all!
+        if (words.length == 0) return "...";
+
+        return words.join(" ");
 
     }
 

@@ -4,54 +4,11 @@ import std.stdio;
 import std.algorithm;
 
 import ominbot.core.params;
+import ominbot.core.structs;
 
 
 @safe:
 
-
-struct MapEntry {
-
-    /// Text within the entry.
-    string text;
-
-    /// If true, this entry represents a single noun.
-    bool noun;
-
-    /// Occurence count.
-    ulong occurences;
-
-    /// Sentiment of the entry.
-    short sentiment;
-
-    /// Check if the entry is empty or not.
-    bool opCast(T : bool)() const {
-
-        return text.length > 0;
-
-    }
-
-    /// Check if the two entries hold the same text.
-    bool opEquals(const MapEntry other) const {
-
-        return text == other.text;
-
-    }
-
-    /// Check if this entry holds given text.
-    bool opEquals(const string other) const {
-
-        return text == other;
-
-    }
-
-}
-
-struct OminPosition {
-
-    ptrdiff_t x, y;
-    invariant(x >= 0 && y >= 0);
-
-}
 
 /// Relation map bot model.
 ///
@@ -91,7 +48,7 @@ final class RelationMap(size_t height) {
 
     }
 
-    auto scan(size_t radius = mapLookupRadius) {
+    auto scan(ptrdiff_t radius = mapLookupRadius) {
 
         // Get the range
         const minX = max(position.x - radius, 0);
@@ -165,6 +122,45 @@ final class RelationMap(size_t height) {
 
         // Not found...
         insertPhrase(phrase, freeSlots[]);
+
+    }
+
+    /// Fetch a single entry.
+    /// Params:
+    ///     boostDistance = Entries this far away from the position will have an increased chance to be picked.
+    ///     threshold = Fails if the first match is beyond threshold — surrounding area is probably mostly empty, if so.
+    ///     radius = Maximum radius of lookup.
+    /// Returns:
+    ///     Matched entry on success, `null` on failure.
+    /// Note: Loopup area is square and boost range is based on a circle.
+    MapEntry* fetch(size_t boostDistance = 0, float threshold = 0.8, size_t radius = mapLookupRadius) {
+
+        import std.array, std.range;
+        import std.conv, std.math, std.random, std.typecons;
+
+        Tuple!(MapEntry*, ulong)[] items;
+
+        // TODO: optimize by using a more advanced callback, possible but might be difficult
+        foreach (x, y, entry; scan(radius)) {
+
+            // Ignore empty entries
+            if (!*entry) continue;
+
+            // Calculate value for this node
+            const distance = abs(position.x - x)^^2 + abs(position.y - y)^^2;
+
+            items ~= tuple(entry, abs(boostDistance - distance));
+
+        }
+
+        // No items to choose from...
+        if (items.length == 0) return null;
+
+        // Get a random matching item
+        return items.sort!"a[1] < b[1]"
+            .take(to!ulong(items.length * (1 - threshold)))
+            .array
+            .choice[0];
 
     }
 
