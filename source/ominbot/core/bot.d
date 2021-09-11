@@ -36,7 +36,7 @@ final class Ominbot : Bot {
         map = new RelationMap;
 
         // Load the corpus
-        map.feed(map.root, readText("resources/bot-corpus.txt"));
+        //map.feed(map.root, readText("resources/bot-corpus.txt"));
 
     }
 

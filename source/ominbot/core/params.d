@@ -4,7 +4,9 @@ module ominbot.core.params;
 enum groupSizeLimit = 10;
 
 /// Number phrases to keep within the original group on split.
-enum groupSplitKeep = 5;
+enum groupSplitKeep = 6;
+
+enum maxLookupDistance = 15;
 
 /// Max word count for a single sentence
 enum maxWords = 5;

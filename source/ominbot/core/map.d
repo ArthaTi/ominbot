@@ -38,17 +38,24 @@ final class RelationMap {
 
     }
 
+    /// Generate text based on the map.
+    ///
+    /// Will update the `group` parameter to value of the last group visited during lookup.
+    string[] generate(ref MapGroup group, MapEntry[] entries) {
+
+        return [];
+
+    }
+
     /// Feed text into the model to let it learn.
     void feed(MapGroup group, string text) @trusted {
 
-        import std.array, std.stdio;
+        import std.stdio;
 
         size_t progress;
 
         // Add stuff line by line
         foreach (line; splitLines(text)) {
-
-            auto words = splitWords(line);
 
             progress += line.length + 1;
 
@@ -59,10 +66,25 @@ final class RelationMap {
 
             }
 
-            // Add each word into the model
-            addPhrase(group, words.map!(a => MapEntry(a, false, 0, null)).array);
+            feedSentence(group, line);
 
         }
+
+    }
+
+    /// Feed a single sentence for the model
+    MapEntry[] feedSentence(MapGroup group, string text) {
+
+        import std.array;
+
+        auto entries = splitWords(text)
+            .map!(a => MapEntry(a, false, 0, null))
+            .array;
+
+        // Add each word into the model
+        addPhrase(group, entries);
+
+        return entries;
 
     }
 
