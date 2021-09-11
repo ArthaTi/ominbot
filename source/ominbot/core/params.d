@@ -6,7 +6,7 @@ enum mapHeight = 200;
 enum mapRearrangeRadius = 25;
 
 /// Radius of the (square) region to lookup and use word within.
-enum mapLookupRadius = 25;
+enum mapLookupRadius = 6;
 
 /// Max word count for a single sentence
 enum maxWords = 10;

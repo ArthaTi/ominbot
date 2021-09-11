@@ -35,12 +35,24 @@ final class RelationMap(size_t height) {
     }
 
     /// Feed text into the model to let it learn.
-    void feed(string text) {
+    void feed(string text) @trusted {
 
-        const words = splitWords(text);
+        import std.stdio;
+
+        size_t progress;
 
         // Add each word into the model
-        foreach (word; words) {
+        foreach (word; splitWords(text)) {
+
+            progress += word.length + 1;
+
+            if (progress % 200_000 <= word.length) {
+
+                writefln!"loading model... ~%skB/%skB"(progress/1000, text.length/1000);
+
+                debug break;
+
+            }
 
             addPhrase(MapEntry(word, false, 1, 0));
 
@@ -217,8 +229,6 @@ final class RelationMap(size_t height) {
         // Move to the resulting position
         position = OminPosition(newPosX, newPosY);
 
-        writefln!"moving to position %s"(position);
-
     }
 
     /// Get distance between current position and the given one, up to second power.
@@ -264,20 +274,20 @@ final class RelationMap(size_t height) {
 
         );
 
+        const options = max(1, to!size_t(freeSlots.length * (1-threshold)));
+
         // Get top item
-        auto entryPos = selection.take(to!size_t(freeSlots.length * (1-threshold)))
+        auto entryPos = selection.take(options)
             .array
             .choice;
 
         // Replace it with this phrase
         columns[entryPos.x][entryPos.y] = phrase;
 
-        writefln!"inserted at (%s, %s)"(entryPos.x, entryPos.y);
-
 
     }
 
-    private string[] splitWords(string text) @trusted {
+    private auto splitWords(string text) @system {
 
         import std.uni, std.conv, std.array, std.string;
 
@@ -288,8 +298,7 @@ final class RelationMap(size_t height) {
             .map!(a => a.array.strip.to!string)
 
             // Remove empty items
-            .filter!(a => a.length)
-            .array;
+            .filter!(a => a.length);
 
     }
 

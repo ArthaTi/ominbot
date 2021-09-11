@@ -29,7 +29,12 @@ final class Ominbot : Bot {
 
     this() {
 
+        import std.file;
+
         map = new RelationMap!mapHeight;
+
+        // Load the corpus
+        map.feed(readText("resources/bot-corpus.txt"));
 
     }
 
