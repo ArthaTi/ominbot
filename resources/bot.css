@@ -1,6 +1,7 @@
 ul.relation-map li {
 
-    display: inline-block;
+    list-style-type: none;
+    border-left: 2px solid #aaa;
 
 }
 

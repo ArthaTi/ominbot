@@ -6,7 +6,7 @@ enum groupSizeLimit = 10;
 /// Number phrases to keep within the original group on split.
 enum groupSplitKeep = 6;
 
-enum maxLookupDistance = 15;
+enum maxLookupDistance = 25;
 
 /// Max word count for a single sentence
 enum maxWords = 5;

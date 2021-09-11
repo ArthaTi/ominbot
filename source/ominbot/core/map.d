@@ -38,11 +38,28 @@ final class RelationMap {
 
     }
 
-    /// Generate text based on the map.
-    ///
-    /// Will update the `group` parameter to value of the last group visited during lookup.
-    string[] generate(ref MapGroup group, MapEntry[] entries) {
+    MapEntry[] parseText(string text) {
 
+        import std.array;
+
+        return splitWords(text)
+            .map!(a => MapEntry(a, false, 0, null))
+            .array;
+
+    }
+
+    /// Find the most relevant groups in close proximity. Output is sorted.
+    MapGroup[] relevant(MapGroup group, MapEntry[] entries) {
+
+        // TODO
+        return [group];
+
+    }
+
+    /// Generate text based on the map.
+    string[] generate(MapGroup[] group) {
+
+        // TODO
         return [];
 
     }
@@ -50,7 +67,7 @@ final class RelationMap {
     /// Feed text into the model to let it learn.
     void feed(MapGroup group, string text) @trusted {
 
-        import std.stdio;
+        import std.stdio, std.random;
 
         size_t progress;
 
@@ -63,36 +80,24 @@ final class RelationMap {
             if (progress % 200_000 <= line.length) {
 
                 writefln!"loading model... ~%skB/%skB, %s groups built"(progress/1000, text.length/1000, groups.length);
-                break;
+                break; // TODO optimize and don't
 
             }
 
-            feedSentence(group, line);
+            // TODO: choose based on `relevant`
+            group = addPhrase(group, parseText(line)).choice;
 
         }
 
     }
 
-    /// Feed a single sentence for the model
-    MapEntry[] feedSentence(MapGroup group, string text) {
-
-        import std.array;
-
-        auto entries = splitWords(text)
-            .map!(a => MapEntry(a, false, 0, null))
-            .array;
-
-        // Add each word into the model
-        addPhrase(group, entries);
-
-        return entries;
-
-    }
-
     /// Insert a new phrase into the model.
-    void addPhrase(MapGroup group, MapEntry[] phrases) {
+    /// Returns: List of affected groups.
+    MapGroup[] addPhrase(MapGroup group, MapEntry[] phrases) {
 
         MapEntry*[] insertedPhrases;
+
+        auto groups = [group];
 
         // Insert each phrase
         foreach (phrase; phrases) {
@@ -124,14 +129,23 @@ final class RelationMap {
 
         }
 
-        // This group is too big, perform a split
-        if (group.entries.length >= groupSizeLimit) splitGroup(group);
+        // This group is too big
+        if (group.entries.length > groupSizeLimit) {
 
+            // Perform a split
+            groups ~= splitGroup(group);
+
+            // Check which group relates the best
+
+        }
+
+        return groups;
 
     }
 
     /// Split the given group.
-    void splitGroup(MapGroup group) {
+    /// Returns: The newly created group.
+    MapGroup splitGroup(MapGroup group) {
 
         // Create a new group
         auto newGroup = new MapGroup;
@@ -163,6 +177,16 @@ final class RelationMap {
         // Repeat if the group is still too big
         while (group.entries.length > groupSizeLimit);
 
+
+        // But wait, our new group might be too big
+        if (newGroup.entries.length > groupSizeLimit) {
+
+            splitGroup(newGroup);
+
+        }
+
+        return newGroup;
+
     }
 
     private void crackSplit(MapGroup input, MapGroup output, MapEntry entry) {
@@ -172,6 +196,9 @@ final class RelationMap {
         // Check all relations of this node
         foreach (relation; entry.related.byKeyValue.array.sort!"a.value < b.value".map!"a.key") {
 
+            // Stop once group size has been normalized
+            if (input.entries.length - output.entries.length <= groupSizeLimit) break;
+
             const noun = dictionary.findWord(relation).noun;
 
             // TODO: don't reset relations; keep sentiment
@@ -179,9 +206,6 @@ final class RelationMap {
 
             // Remove from the original range
             input.entries = input.entries.remove!(a => a.text == relation);
-
-            // Stop once group size has been normalized
-            if (input.entries.length - output.entries.length < groupSizeLimit) break;
 
         }
 
