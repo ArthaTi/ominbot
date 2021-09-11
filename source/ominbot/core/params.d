@@ -1,12 +1,10 @@
 module ominbot.core.params;
 
-enum mapHeight = 200;
+/// Limit of phrases within a single relation group.
+enum groupSizeLimit = 10;
 
-/// Radius of the (square) region to rearrange words within.
-enum mapRearrangeRadius = 25;
-
-/// Radius of the (square) region to lookup and use word within.
-enum mapLookupRadius = 5;
+/// Number phrases to keep within the original group on split.
+enum groupSplitKeep = 5;
 
 /// Max word count for a single sentence
 enum maxWords = 5;

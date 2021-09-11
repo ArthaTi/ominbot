@@ -2,22 +2,23 @@ module ominbot.core.structs;
 
 import ominbot.core.params;
 
+
+@safe:
+
+
 struct MapEntry {
 
-    /// Text within the entry.
+    /// Text of the phrase.
     string text;
 
     /// If true, this entry represents a single noun.
     bool noun;
 
-    /// Occurence count.
-    ulong occurences;
-
-    /// Sentiment of the entry.
+    /// Sentiment of the phrase.
     short sentiment;
 
-    /// Words frequently following this entry
-    string[10] following;
+    /// Number of times another phrase had been used along with this one.
+    int[string] related;
 
     /// Check if the entry is empty or not.
     bool opCast(T : bool)() const {
@@ -42,29 +43,12 @@ struct MapEntry {
 
 }
 
-struct FetchOptions {
+class MapGroup {
 
-    /// Boost chance to use those words after.
-    string[] encouraged;
+    /// Entries in this group.
+    MapEntry[] entries;
 
-    /// Reduce chance to use words in this this list after.
-    string[] discouraged;
-
-    /// Minimum (circle) radius of word search.
-    size_t minRadius = 0;
-
-    /// Maxiumum (square) radius of word search.
-    size_t maxRadius = mapLookupRadius;
-
-    /// Threshold for choosing most fitting words.
-    float threshold = 0.8;
-
-
-}
-
-struct OminPosition {
-
-    ptrdiff_t x, y;
-    invariant(x >= 0 && y >= 0);
+    /// Related groups
+    MapGroup[] related;
 
 }

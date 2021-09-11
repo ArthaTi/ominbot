@@ -34,7 +34,7 @@ bool runCommands(Ominbot bot, Event input, bool admin) {
 
             // Create the thoughtmap
             fs.mkdirRecurse("public/");
-            fs.write("public/thoughtmap.html", renderMap(bot.map));
+            //fs.write("public/thoughtmap.html", renderMap(bot.map));
 
             // Send a response
             auto newEvent = input;
@@ -51,7 +51,7 @@ bool runCommands(Ominbot bot, Event input, bool admin) {
             import std.random;
 
             // Move to a random location
-            bot.map.position = OminPosition(uniform(0, bot.map.columns.length), uniform(0, bot.map.height));
+            bot.groups[input.targetChannel] = bot.map.groups.choice;
 
             break;
 

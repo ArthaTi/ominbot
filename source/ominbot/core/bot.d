@@ -24,18 +24,19 @@ static this() {
 final class Ominbot : Bot {
 
     SysTime lastEvent;
-    RelationMap!mapHeight map;
+    RelationMap map;
     bool[ulong] admins;
+    MapGroup[ulong] groups;
     Event[] eventQueue;
 
     this() {
 
         import std.file;
 
-        map = new RelationMap!mapHeight;
+        map = new RelationMap;
 
         // Load the corpus
-        map.feed(readText("resources/bot-corpus.txt"));
+        map.feed(map.root, readText("resources/bot-corpus.txt"));
 
     }
 
@@ -46,7 +47,10 @@ final class Ominbot : Bot {
         // Check for commands
         if (this.runCommands(event, admin)) return;
 
-        map.feed(event.messageText);
+        // Get group for this channel
+        auto group = groups.require(event.targetChannel, map.root);
+
+        map.feed(group, event.messageText);
 
     }
 
@@ -86,34 +90,40 @@ final class Ominbot : Bot {
 
         import std.array, std.random;
 
-        const wordCount = uniform!"[]"(2, maxWords);
+        return "";
 
-        string[] words;
-        FetchOptions options;
+        version (none) {
 
-        // Fill the word list
-        while (words.length < wordCount) {
+            const wordCount = uniform!"[]"(2, maxWords);
 
-            options.minRadius = words.length;
+            string[] words;
+            FetchOptions options;
 
-            // Find new words
-            if (auto word = map.fetch(options)) {
+            // Fill the word list
+            while (words.length < wordCount) {
 
-                words ~= word.text;
-                options.encouraged   = word.following[0..5];
-                options.discouraged ~= word.text;
+                options.minRadius = words.length;
+
+                // Find new words
+                if (auto word = map.fetch(options)) {
+
+                    words ~= word.text;
+                    options.encouraged   = word.following[0..5];
+                    options.discouraged ~= word.text;
+
+                }
+
+                // No word found! Tragedy!
+                else break;
 
             }
 
-            // No word found! Tragedy!
-            else break;
+            // No words at all!
+            if (words.length == 0) return "...";
+
+            return words.join(" ");
 
         }
-
-        // No words at all!
-        if (words.length == 0) return "...";
-
-        return words.join(" ");
 
     }
 
