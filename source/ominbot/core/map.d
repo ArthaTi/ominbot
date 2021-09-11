@@ -138,7 +138,7 @@ final class RelationMap(size_t height) {
         import std.array, std.range;
         import std.conv, std.math, std.random, std.typecons;
 
-        Tuple!(MapEntry*, ulong)[] items;
+        Tuple!(MapEntry*, double)[] items;
 
         // TODO: optimize by using a more advanced callback, possible but might be difficult
         foreach (x, y, entry; scan(radius)) {
@@ -147,7 +147,7 @@ final class RelationMap(size_t height) {
             if (!*entry) continue;
 
             // Calculate value for this node
-            const distance = abs(position.x - x)^^2 + abs(position.y - y)^^2;
+            const distance = distance2(OminPosition(x, y))^^0.5;
 
             items ~= tuple(entry, abs(boostDistance - distance));
 
@@ -218,8 +218,17 @@ final class RelationMap(size_t height) {
 
     }
 
+    /// Get distance between current position and the given one, up to second power.
+    float distance2(OminPosition a) {
+
+        return (a.x - position.x)^^2 + (a.y - position.y)^^2;
+
+    }
+
     /// Insert a phrase into the map.
     private void insertPhrase(MapEntry phrase, OminPosition[] freeSlots) {
+
+        import std.math : abs, sgn;
 
         // No slots available
         if (freeSlots.length == 0) {
@@ -238,8 +247,15 @@ final class RelationMap(size_t height) {
         }
 
         // Sort by preference
-        // Phrases with a higher sentiment should prefer higher Y
-        auto selection = freeSlots.schwartzSort!(a => a.y - phrase.sentiment);
+        auto selection = freeSlots.schwartzSort!(
+
+            // Prioritize close cells
+            a => distance2(a)
+
+                // Update Y preference based on humor
+                + 2*abs(sgn(a.y - position.y) - phrase.sentiment)
+
+        );
 
         // Get top item
         auto entryPos = selection.front;
