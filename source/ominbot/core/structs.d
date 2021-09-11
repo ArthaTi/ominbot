@@ -1,5 +1,7 @@
 module ominbot.core.structs;
 
+import ominbot.core.params;
+
 struct MapEntry {
 
     /// Text within the entry.
@@ -13,6 +15,9 @@ struct MapEntry {
 
     /// Sentiment of the entry.
     short sentiment;
+
+    /// Words frequently following this entry
+    string[10] following;
 
     /// Check if the entry is empty or not.
     bool opCast(T : bool)() const {
@@ -34,6 +39,26 @@ struct MapEntry {
         return text == other;
 
     }
+
+}
+
+struct FetchOptions {
+
+    /// Boost chance to use those words after.
+    string[] encouraged;
+
+    /// Reduce chance to use words in this this list after.
+    string[] discouraged;
+
+    /// Minimum (circle) radius of word search.
+    size_t minRadius = 0;
+
+    /// Maxiumum (square) radius of word search.
+    size_t maxRadius = mapLookupRadius;
+
+    /// Threshold for choosing most fitting words.
+    float threshold = 0.8;
+
 
 }
 

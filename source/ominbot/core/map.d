@@ -5,6 +5,7 @@ import std.algorithm;
 
 import ominbot.core.params;
 import ominbot.core.structs;
+import ominbot.core.dictionary;
 
 
 @safe:
@@ -16,6 +17,9 @@ import ominbot.core.structs;
 /// another, those two will be pulled closer to each other within the map.
 final class RelationMap(size_t height) {
 
+    /// Dictionary used by the map.
+    immutable Dictionary dictionary;
+
     /// Columns in the map. Note: lookup order is columns[x][y].
     MapEntry[height][] columns;
 
@@ -23,6 +27,9 @@ final class RelationMap(size_t height) {
     OminPosition position;
 
     this() {
+
+        // Load the dictionary
+        dictionary = *getDictionary;
 
         // The model should at first be big enough to contain the lookup range.
         columns.length = mapLookupRadius * 2 + 1;
@@ -41,6 +48,8 @@ final class RelationMap(size_t height) {
 
         size_t progress;
 
+        MapEntry* lastWord;
+
         // Add each word into the model
         foreach (word; splitWords(text)) {
 
@@ -54,7 +63,7 @@ final class RelationMap(size_t height) {
 
             }
 
-            addPhrase(MapEntry(word, false, 1, 0));
+            lastWord = addPhrase(MapEntry(word, false, 1, 0), lastWord);
 
         }
 
@@ -98,12 +107,37 @@ final class RelationMap(size_t height) {
 
     /// Lookup the phrase within the model. Increment its occurence count and move closer to the middle, or add it if
     /// it wasn't found.
-    void addPhrase(MapEntry phrase) {
+    /// Returns: pointer to the inserted phrase
+    MapEntry* addPhrase(MapEntry phrase, MapEntry* previous = null) {
 
         import std.array;
 
         // Unoccupied slots found on the map
         auto freeSlots = appender!(OminPosition[]);
+
+        // Update the previous item
+        if (previous) {
+
+            // Search for this text in entries for that phrase
+            const index = previous.following[].countUntil(phrase.text);
+
+            // Found, perform a swap
+            if (index > 0) {
+
+                swap(previous.following[index-1], previous.following[index]);
+
+            }
+
+            // Nope, insert
+            else {
+
+                const emptyIndex = previous.following[].countUntil(null);
+
+                previous.following[emptyIndex == -1 ? $-1 : emptyIndex] = phrase.text;
+
+            }
+
+        }
 
         // Search for the phrase within the range
         foreach (x, y, entry; scan(mapRearrangeRadius)) {
@@ -126,26 +160,21 @@ final class RelationMap(size_t height) {
                 pullTogether(OminPosition(x, y));
 
                 // End searching
-                return;
+                return entry;
 
             }
 
         }
 
         // Not found...
-        insertPhrase(phrase, freeSlots[]);
+        return insertPhrase(phrase, freeSlots[]);
 
     }
 
     /// Fetch a single entry.
-    /// Params:
-    ///     boostDistance = Entries this far away from the position will have an increased chance to be picked.
-    ///     threshold = Fails if the first match is beyond threshold — surrounding area is probably mostly empty, if so.
-    ///     radius = Maximum radius of lookup.
     /// Returns:
     ///     Matched entry on success, `null` on failure.
-    /// Note: Loopup area is square and boost range is based on a circle.
-    MapEntry* fetch(size_t minRadius = 0, size_t maxRadius = mapLookupRadius, float threshold = 0.6) {
+    MapEntry* fetch(FetchOptions options) {
 
         import std.array, std.range;
         import std.conv, std.math, std.random, std.typecons;
@@ -153,7 +182,7 @@ final class RelationMap(size_t height) {
         Tuple!(MapEntry*, double)[] items;
 
         // TODO: optimize by using a more advanced callback, possible but might be difficult
-        foreach (x, y, entry; scan(maxRadius)) {
+        foreach (x, y, entry; scan(options.maxRadius)) {
 
             // Ignore empty entries
             if (!*entry) continue;
@@ -162,7 +191,7 @@ final class RelationMap(size_t height) {
             auto distance = distance2(OminPosition(x, y))^^0.5;
 
             // Too close to center, ignore
-            if (distance < minRadius) continue;
+            if (distance < options.minRadius) continue;
 
             items ~= tuple(entry, distance);
 
@@ -171,9 +200,16 @@ final class RelationMap(size_t height) {
         // No items to choose from...
         if (items.length == 0) return null;
 
+        double priority(MapEntry* entry) {
+
+            return options.encouraged.canFind(entry.text) ? 2.0 : 0
+                + options.discouraged.canFind(entry.text) ? 0.5 : 0;
+
+        }
+
         // Get a random matching item
-        return items.sort!"a[1] < b[1]"
-            .take(to!ulong(items.length * (1 - threshold)))
+        return items.schwartzSort!(a => a[1] / priority(a[0]))
+            .take(1 + to!ulong(items.length * (1 - options.threshold)))
             .array
             .choice[0];
 
@@ -239,7 +275,7 @@ final class RelationMap(size_t height) {
     }
 
     /// Insert a phrase into the map.
-    private void insertPhrase(MapEntry phrase, OminPosition[] freeSlots, float threshold = 0.8) {
+    private MapEntry* insertPhrase(MapEntry phrase, OminPosition[] freeSlots, float threshold = 0.8) {
 
         import std.math : abs, sgn;
         import std.conv, std.array, std.range, std.random;
@@ -282,7 +318,9 @@ final class RelationMap(size_t height) {
             .choice;
 
         // Replace it with this phrase
-        columns[entryPos.x][entryPos.y] = phrase;
+        auto target = &columns[entryPos.x][entryPos.y];
+        *target = phrase;
+        return target;
 
 
     }
@@ -294,11 +332,17 @@ final class RelationMap(size_t height) {
         // Strip on whitespace
         return text.splitWhen!((a, b) => a.isWhite)
 
-            // Remove the whitespace from the result
-            .map!(a => a.array.strip.to!string)
+            // Remove non alpha-numeric content from the words
+            .map!(a => a.filter!isAlphaNum.array.to!string)
 
             // Remove empty items
-            .filter!(a => a.length);
+            .filter!(a => a.length)
+
+            // Remove long numbers
+            .filter!(a => a.all!(a => !a.isNumber) || a.length <= 4)
+
+            // Only take in nouns
+            .filter!(a => dictionary.findWord(a).noun);
 
     }
 

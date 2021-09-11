@@ -7,6 +7,7 @@ import ominbot.launcher;
 
 import ominbot.core.map;
 import ominbot.core.params;
+import ominbot.core.structs;
 import ominbot.core.commands;
 
 
@@ -88,12 +89,19 @@ final class Ominbot : Bot {
         const wordCount = uniform!"[]"(2, maxWords);
 
         string[] words;
+        FetchOptions options;
 
+        // Fill the word list
         while (words.length < wordCount) {
 
-            if (auto word = map.fetch(words.length)) {
+            options.minRadius = words.length;
+
+            // Find new words
+            if (auto word = map.fetch(options)) {
 
                 words ~= word.text;
+                options.encouraged   = word.following[0..5];
+                options.discouraged ~= word.text;
 
             }
 
