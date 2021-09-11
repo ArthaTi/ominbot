@@ -15,7 +15,9 @@ import ominbot.core.dictionary;
 ///
 /// Based on conversations Omin has with other, Omin navigates and builds a relation map. If a word is used along with
 /// another, those two will be pulled closer to each other within the map.
-final class RelationMap(size_t height) {
+final class RelationMap(size_t _height) {
+
+    enum height = _height;
 
     /// Dictionary used by the map.
     immutable Dictionary dictionary;

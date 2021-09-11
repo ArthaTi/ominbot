@@ -12,6 +12,7 @@ import ominbot.launcher;
 import ominbot.core.bot;
 import ominbot.core.html;
 import ominbot.core.params;
+import ominbot.core.structs;
 
 
 @safe:
@@ -41,6 +42,17 @@ bool runCommands(Ominbot bot, Event input, bool admin) {
             bot.eventQueue ~= newEvent;
 
             // Write response
+            break;
+
+        case "teleport":
+        case "respawn":
+        case "reset":
+
+            import std.random;
+
+            // Move to a random location
+            bot.map.position = OminPosition(uniform(0, bot.map.columns.length), uniform(0, bot.map.height));
+
             break;
 
         default:
