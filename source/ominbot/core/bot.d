@@ -80,7 +80,7 @@ final class Ominbot : Bot {
 
         import std.array, std.random;
 
-        const wordCount = uniform!"[]"(2, 5);
+        const wordCount = uniform!"[]"(2, maxWords);
 
         string[] words;
 

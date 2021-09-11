@@ -133,7 +133,7 @@ final class RelationMap(size_t height) {
     /// Returns:
     ///     Matched entry on success, `null` on failure.
     /// Note: Loopup area is square and boost range is based on a circle.
-    MapEntry* fetch(size_t boostDistance = 0, float threshold = 0.8, size_t radius = mapLookupRadius) {
+    MapEntry* fetch(size_t minRadius = 0, size_t maxRadius = mapLookupRadius, float threshold = 0.6) {
 
         import std.array, std.range;
         import std.conv, std.math, std.random, std.typecons;
@@ -141,15 +141,18 @@ final class RelationMap(size_t height) {
         Tuple!(MapEntry*, double)[] items;
 
         // TODO: optimize by using a more advanced callback, possible but might be difficult
-        foreach (x, y, entry; scan(radius)) {
+        foreach (x, y, entry; scan(maxRadius)) {
 
             // Ignore empty entries
             if (!*entry) continue;
 
             // Calculate value for this node
-            const distance = distance2(OminPosition(x, y))^^0.5;
+            auto distance = distance2(OminPosition(x, y))^^0.5;
 
-            items ~= tuple(entry, abs(boostDistance - distance));
+            // Too close to center, ignore
+            if (distance < minRadius) continue;
+
+            items ~= tuple(entry, distance);
 
         }
 
@@ -226,9 +229,10 @@ final class RelationMap(size_t height) {
     }
 
     /// Insert a phrase into the map.
-    private void insertPhrase(MapEntry phrase, OminPosition[] freeSlots) {
+    private void insertPhrase(MapEntry phrase, OminPosition[] freeSlots, float threshold = 0.8) {
 
         import std.math : abs, sgn;
+        import std.conv, std.array, std.range, std.random;
 
         // No slots available
         if (freeSlots.length == 0) {
@@ -244,6 +248,9 @@ final class RelationMap(size_t height) {
 
             }
 
+            // TODO: store the word in a temporary list (words from which would be accessible at all time)
+            // perform sleep if it grows too big, i.e. rebuild the model based on direct word relation data
+
         }
 
         // Sort by preference
@@ -258,7 +265,9 @@ final class RelationMap(size_t height) {
         );
 
         // Get top item
-        auto entryPos = selection.front;
+        auto entryPos = selection.take(to!size_t(freeSlots.length * (1-threshold)))
+            .array
+            .choice;
 
         // Replace it with this phrase
         columns[entryPos.x][entryPos.y] = phrase;
