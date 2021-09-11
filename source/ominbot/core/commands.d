@@ -24,6 +24,7 @@ bool runCommands(Ominbot bot, Event input, bool admin) {
     if (!input.messageText.skipOver("omin, ")) return false;
 
     const command = input.messageText.strip;
+    auto group = bot.groups.get(input.targetChannel, bot.map.root);
 
     try switch (command) {
 
@@ -34,7 +35,7 @@ bool runCommands(Ominbot bot, Event input, bool admin) {
 
             // Create the thoughtmap
             fs.mkdirRecurse("public/");
-            //fs.write("public/thoughtmap.html", renderMap(bot.map));
+            fs.write("public/thoughtmap.html", renderMap(group));
 
             // Send a response
             auto newEvent = input;

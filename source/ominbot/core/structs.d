@@ -45,10 +45,26 @@ struct MapEntry {
 
 class MapGroup {
 
+    static ptrdiff_t nextID;
+
+    ptrdiff_t id;
+
     /// Entries in this group.
     MapEntry[] entries;
 
     /// Related groups
     MapGroup[] related;
+
+    this() {
+
+        id = nextID++;
+
+    }
+
+    ptrdiff_t opCmp(const MapGroup group) const {
+
+        return id - group.id;
+
+    }
 
 }

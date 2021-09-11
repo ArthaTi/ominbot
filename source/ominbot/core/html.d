@@ -5,6 +5,7 @@ import fs = std.file;
 
 import ominbot.core.map;
 import ominbot.core.params;
+import ominbot.core.structs;
 
 
 @safe:
@@ -38,49 +39,60 @@ string render(Document document, Element data) {
 
 }
 
-//string renderMap(RelationMap!mapHeight map) {
-//
-//    Document document = {
-//
-//        title: "Relation map"
-//
-//    };
-//
-//    auto table = elem!"table";
-//    auto row = elem!"tr";
-//
-//    size_t lastY = 0;
-//
-//    foreach (x, y, entry; map.scan) {
-//
-//        if (y != lastY) {
-//
-//            lastY = y;
-//            table.add(row);
-//            row = elem!"tr";
-//
-//        }
-//
-//        string[string] attributes;
-//
-//        if (x == map.position.x && y == map.position.y) {
-//
-//            attributes["class"] = "position";
-//
-//        }
-//
-//        row.add!"td"(attributes, entry.text);
-//
-//    }
-//
-//    table.add(row);
-//
-//    return document.render(
-//        elem!"main"(
-//            elem!"h1"("Relation map"),
-//            elem!"p"(),
-//            table,
-//        ),
-//    );
-//
-//}
+string renderMap(MapGroup group) {
+
+    import std.container;
+
+    Document document = {
+
+        title: "Relation map"
+
+    };
+
+    auto visited = redBlackTree!MapGroup;
+
+    Element renderGroup(MapGroup group) {
+
+        import std.format;
+
+        // Mark as visited
+        visited.insert(group);
+
+        // List entries
+        auto entriesE = elem!("div", q{ class="group" })(
+            elem!"p"(group.entries.length.format!"(%s)")
+        );
+        foreach (entry; group.entries) {
+
+            entriesE.add!"p"(entry.text);
+
+        }
+
+        // List relations
+        auto relationsE = elem!"ul";
+        foreach (relation; group.related) {
+
+            // Stop if visited enough groups
+            if (visited.length >= maxLookupDistance) break;
+
+            // Ignore if this relation had been visited
+            if (relation in visited) continue;
+
+            // Add this relation to ouput
+            relationsE.add(renderGroup(relation));
+
+        }
+
+        return elem!"li"(entriesE, relationsE);
+
+    }
+
+    return document.render(
+        elem!"main"(
+            elem!"h1"("Relation map"),
+            elem!"p"(),
+            elem!("ul", q{ class="relation-map" })(renderGroup(group))
+        ),
+    );
+
+}

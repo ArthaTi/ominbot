@@ -63,6 +63,7 @@ final class RelationMap {
             if (progress % 200_000 <= line.length) {
 
                 writefln!"loading model... ~%skB/%skB, %s groups built"(progress/1000, text.length/1000, groups.length);
+                break;
 
             }
 
