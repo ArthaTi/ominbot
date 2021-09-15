@@ -23,7 +23,17 @@ bool runCommands(Ominbot bot, Event input, bool admin) {
     // Check for prefix
     if (!input.messageText.skipOver("omin, ")) return false;
 
-    const command = input.messageText.strip;
+    auto argv = [input.messageText.strip];
+
+    runCommands(bot, input, argv, admin);
+
+    return true;
+
+}
+
+void runCommands(Ominbot bot, Event input, string[] argv, bool admin) {
+
+    const command = argv[0];
     auto group = bot.groups.get(input.targetChannel, bot.map.root);
 
     try switch (command) {
@@ -67,8 +77,6 @@ bool runCommands(Ominbot bot, Event input, bool admin) {
         writeln(exc.msg);
 
     }
-
-    return true;
 
 }
 

@@ -82,7 +82,7 @@ bool readPrompt(Bot bot) {
         }
 
         // A command...
-        const cmd = msg.strip;
+        const cmd = msg.strip[1..$];
         const arg = cmd.findSplit(" ");
 
         bot.runCommand(arg ? [arg[0], arg[2]] : [cmd]);
@@ -103,19 +103,20 @@ void runCommand(Bot bot, string[] argv) {
 
     switch (argv[0]) {
 
-        case "/user":
-        case "/server":
-        case "/channel":
+        case "user":
+        case "server":
+        case "channel":
             switchContext(argv);
             break;
 
-        case "/f":
-        case "/force":
+        case "f":
+        case "force":
             bot.requestResponse();
             break;
 
         default:
-            throw new Exception("unknown command");
+            bot.pushCommand(Event(userID, serverID, channelID, null), argv);
+            break;
 
     }
 
@@ -133,15 +134,15 @@ void switchContext(string[] argv) {
 
     final switch (argv[0]) {
 
-        case "/user":
+        case "user":
             userID = value;
             break;
 
-        case "/server":
+        case "server":
             serverID = value;
             break;
 
-        case "/channel":
+        case "channel":
             channelID = value;
             break;
 

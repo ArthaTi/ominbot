@@ -54,6 +54,14 @@ final class Ominbot : Bot {
 
     }
 
+    override void pushCommand(Event event, string[] argv) {
+
+        const admin = isAdmin(event.user);
+
+        this.runCommands(event, argv, admin);
+
+    }
+
     override void requestResponse() {
 
         // TODO: choose a reasonable channel

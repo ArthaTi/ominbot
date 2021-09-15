@@ -35,6 +35,9 @@ interface Bot {
     /// Notify the bot of an event within the channel.
     void pushEvent(Event event);
 
+    /// Request the bot to execute a command.
+    void pushCommand(Event event, string[] argv);
+
     /// Request an instance response from the bot.
     void requestResponse();
 
