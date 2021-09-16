@@ -58,7 +58,7 @@ string renderMap(MapGroup group) {
         // Mark as visited
         visited.insert(group);
 
-        auto header = format!"%s (%s)"(group.id, group.entries.length);
+        auto header = format!"group %s (%s)"(group.id, group.entries.length);
 
         // List entries
         auto entriesE = elem!("div", q{ class="group" })(

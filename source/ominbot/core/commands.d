@@ -33,6 +33,8 @@ bool runCommands(Ominbot bot, Event input, bool admin) {
 
 void runCommands(Ominbot bot, Event input, string[] argv, bool admin) {
 
+    import std.conv;
+
     const command = argv[0];
     auto group = bot.groups.get(input.targetChannel, bot.map.root);
 
@@ -42,6 +44,9 @@ void runCommands(Ominbot bot, Event input, string[] argv, bool admin) {
         case "show your brain":
         case "thoughtmap":
             enforce!ArgException(admin, "not admin");
+
+            // Change group if given second argument
+            if (argv.length > 1) group = bot.map.groups[argv[1].to!size_t];
 
             // Create the thoughtmap
             fs.mkdirRecurse("public/");

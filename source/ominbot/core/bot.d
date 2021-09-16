@@ -31,12 +31,14 @@ final class Ominbot : Bot {
 
     this() {
 
-        import std.file;
+        import fs = std.file;
 
         map = new RelationMap;
 
+        writefln!"loading model...";
+
         // Load the corpus
-        map.feed(map.root, readText("resources/bot-corpus.txt"));
+        map.feed(map.root, fs.readText("resources/bot-corpus.txt"));
 
     }
 
@@ -111,20 +113,42 @@ final class Ominbot : Bot {
         // Get the target group
         auto group = groups.get(event.targetChannel, map.root);
 
-        string[] words;
+        MapEntry[] words;
         MapGroup lastGroup;
 
         // Fill the word list
         while (words.length < wordCount) {
 
-            auto relations = group.relatedExcept(lastGroup).array;
-            const changeGroup = relations.length != 0;
+            auto relations = group.relatedExcept(lastGroup);
+            const changeGroup = !relations.empty;
 
             // Find another group
             if (changeGroup) {
 
                 auto thisGroup = group;
-                group = relations.choice;
+
+                // Lookup a group matching the last chosen word
+                if (words.length) {
+
+                    auto result = group.findRelated(words[$-1].following[0..5].dup.randomShuffle);
+
+                    // Found the group
+                    if (result[0]) {
+
+                        group = result[0];
+                        lastGroup = thisGroup;
+
+                        // Push the word
+                        words ~= result[1];
+
+                        continue;
+
+                    }
+
+                }
+
+                // Get a random neighbour group otherwise
+                group = relations.array.choice;
                 lastGroup = thisGroup;
 
             }
@@ -156,11 +180,12 @@ final class Ominbot : Bot {
 
                 }
 
-                words ~= group.entries.dup
+                auto insertedWords = group.entries.dup
                     .partialShuffle(groupWordCount)
                     .take(groupWordCount)
-                    .map!(a => a.text)
                     .array;
+
+                words ~= insertedWords;
 
             }
 
@@ -179,7 +204,7 @@ final class Ominbot : Bot {
         // Update the group
         groups[event.targetChannel] = group;
 
-        return words.length ? words.join(" ") : "...";
+        return words.length ? words.map!"a.text".join(" ") : "...";
 
     }
 

@@ -126,20 +126,33 @@ final class RelationMap {
         MapEntry[] insertQueue;
 
         // Check which phrases exist and which do not
-        foreach (phrase; phrases) {
+        foreach (i, phrase; phrases) {
+
+            // Get the next phrase, if present
+            auto nextPhrase = i+1 < phrases.length
+                ? phrases[i+1].text
+                : "";
 
             // Find the entry in the group
             auto entries = group.entries.assumeSorted.equalRange(phrase);
 
-            // Not found, insert
+            // Not found
             if (entries.length == 0) {
 
+                // Insert
+                phrase.bumpFollow(nextPhrase);
                 insertQueue ~= phrase;
 
             }
 
-            // Found, bump relation count
-            else bumpRelation(entries[0]);
+            // Found
+            else {
+
+                // Bump relation count
+                entries[0].bumpFollow(nextPhrase);
+                bumpRelation(entries[0]);
+
+            }
 
         }
 
