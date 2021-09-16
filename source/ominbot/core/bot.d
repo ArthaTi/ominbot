@@ -180,6 +180,9 @@ final class Ominbot : Bot {
 
                 }
 
+                // Add a comma to the previous word
+                if (words.length) words[$-1].text ~= ",";
+
                 auto insertedWords = group.entries.dup
                     .partialShuffle(groupWordCount)
                     .take(groupWordCount)

@@ -263,7 +263,7 @@ final class RelationMap {
 
             // Remove non alpha-numeric content from the words
             .map!(a => a
-                .filter!isAlphaNum
+                .filter!(a => a.isAlphaNum || ".!?‽".canFind(a))
                 .array
                 .to!string
                 .toLower
@@ -276,7 +276,7 @@ final class RelationMap {
             .filter!(a => a.all!(a => !a.isNumber) || a.length <= 4)
 
             // Only take in nouns
-            //.filter!(a => dictionary.findWord(a).noun)
+            .filter!(a => dictionary.findWord(a).noun)
 
             .array;
 
