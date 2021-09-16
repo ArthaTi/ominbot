@@ -256,27 +256,36 @@ final class RelationMap {
 
     private string[] splitWords(string text) @trusted {
 
-        import std.uni, std.conv, std.array, std.string;
+        import std.range;
+        import std.typecons;
+        import std.uni, std.conv, std.string;
 
         // Strip on whitespace
         return text.splitWhen!((a, b) => a.isWhite)
 
             // Remove non alpha-numeric content from the words
-            .map!(a => a
-                .filter!(a => a.isAlphaNum || ".!?‽".canFind(a))
-                .array
-                .to!string
-                .toLower
-            )
+            .map!(a => tuple(
+                // [0]: word
+                a.filter!(b => b.isAlphaNum)
+                    .to!string
+                    .toLower,
+                // [1]: marks
+                a.filter!(b => ".!?‽".canFind(b))
+                    .take(1)
+                    .to!string
+            ))
 
             // Remove empty items
-            .filter!(a => a.length)
+            .filter!(a => a[0].length)
 
             // Remove long numbers
-            .filter!(a => a.all!(a => !a.isNumber) || a.length <= 4)
+            .filter!(a => a[0].all!(b => !b.isNumber) || a[0].length <= 4)
 
             // Only take in nouns
-            .filter!(a => dictionary.findWord(a).noun)
+            .filter!(a => dictionary.findWord(a[0]).noun)
+
+            // Add marks back in, but only if they're all the same
+            .map!(a => a[0] ~ a[1])
 
             .array;
 

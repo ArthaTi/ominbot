@@ -165,6 +165,7 @@ final class Ominbot : Bot {
     /// Find possibly related phrases
     bool findRelatedPhrases(ref MapEntry[] phrases, ref MapGroup group) {
 
+        import std.uni;
         import std.array, std.range, std.algorithm;
 
         float distance = 0;
@@ -216,9 +217,15 @@ final class Ominbot : Bot {
 
         }
 
-        // Add a comma to the previous word
-        float commaChance = 1 - distance/maxLookupDistance;
-        if (phrases.length && uniform01 < commaChance) phrases[$-1].text ~= ",";
+        // If the previous word has no punctuation
+        if (phrases.length && !phrases[$-1].text.back.isPunctuation) {
+
+            float commaChance = 1 - distance/maxLookupDistance;
+
+            // Give a chance to add a comma to that word
+            if (uniform01 < commaChance) phrases[$-1].text ~= ",";
+
+        }
 
         phrases ~= group.entries.dup
             .partialShuffle(groupPhraseCount)
