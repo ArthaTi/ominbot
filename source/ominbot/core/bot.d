@@ -48,9 +48,15 @@ final class Ominbot : Bot {
         if (this.runCommands(event, admin)) return;
 
         // Get group for this channel
-        auto group = groups.require(event.targetChannel, map.root);
+        if (auto group = event.targetChannel in groups) {
 
-        map.feed(group, event.messageText);
+            // Feed data relative to that group
+            *group = map.feed(*group, event.messageText);
+
+        }
+
+        // Group not found, insert from root
+        else groups[event.targetChannel] = map.feed(map.root, event.messageText);
 
     }
 

@@ -49,10 +49,20 @@ final class RelationMap {
     }
 
     /// Find the most relevant groups in close proximity. Output is sorted.
-    MapGroup[] relevant(MapGroup group, MapEntry[] entries) {
+    MapGroup[] relevant(MapGroup group, MapEntry[] entries) @trusted
+    out (r; r.length != 0, "`relevant` output cannot be empty")
+    do {
 
-        // TODO
-        return [group];
+        import std.array, std.range;
+
+        // Sort the entries
+        auto sortedEntries = entries.sort;
+
+        return [group].chain(group.searchRelated)
+            .take(maxLookupDistance)
+            .array
+            .schwartzSort!(a => a.entries.setIntersection(sortedEntries).walkLength, "a > b")
+            .array;
 
     }
 
@@ -65,7 +75,8 @@ final class RelationMap {
     }
 
     /// Feed text into the model to let it learn.
-    void feed(MapGroup group, string text) @trusted {
+    /// Returns: Group the model ended on after learning.
+    MapGroup feed(MapGroup group, string text) @trusted {
 
         import std.stdio, std.random;
 
@@ -81,13 +92,24 @@ final class RelationMap {
 
                 writefln!"loading model... ~%skB/%skB, %s groups built"(progress/1000, text.length/1000, groups.length);
                 break; // TODO optimize and don't
+                // or lazy-load
 
             }
 
-            // TODO: choose based on `relevant`
-            group = addPhrase(group, parseText(line)).choice;
+            // Ignore empty lines
+            if (line.length == 0) continue;
+
+            auto lineText = parseText(line);
+
+            // Pick a new group based on relevant groups
+            group = relevant(group, lineText)[0];
+
+            // Insert the phrase into the model
+            group = addPhrase(group, lineText).choice;
 
         }
+
+        return group;
 
     }
 
@@ -95,39 +117,45 @@ final class RelationMap {
     /// Returns: List of affected groups.
     MapGroup[] addPhrase(MapGroup group, MapEntry[] phrases) {
 
-        MapEntry*[] insertedPhrases;
+        import std.range;
 
         auto groups = [group];
 
-        // Insert each phrase
+        void bumpRelation(ref MapEntry entry) {
+
+            foreach (otherPhrase; phrases) {
+
+                entry.related.require(otherPhrase.text, 0) += 1;
+
+            }
+
+        }
+
+        MapEntry[] insertQueue;
+
+        // Check which phrases exist and which do not
         foreach (phrase; phrases) {
 
             // Find the entry in the group
-            auto entries = group.entries.find!"a == b"(phrase);
+            auto entries = group.entries.assumeSorted.equalRange(phrase);
 
             // Not found, insert
             if (entries.length == 0) {
 
-                group.entries ~= phrase;
-                insertedPhrases ~= &group.entries[$-1];
+                insertQueue ~= phrase;
 
             }
 
-            // Found
-            else insertedPhrases ~= &entries[0];
+            // Found, bump relation count
+            else bumpRelation(entries[0]);
 
         }
 
-        // Bump relation count
-        foreach (phrase; insertedPhrases) {
+        // Bump relation count for queued entries
+        foreach (ref phrase; insertQueue) bumpRelation(phrase);
 
-            foreach (otherPhrase; insertedPhrases) {
-
-                phrase.related.require(otherPhrase.text, 0) += 1;
-
-            }
-
-        }
+        // Insert the entries into the group
+        group ~= insertQueue;
 
         // This group is too big
         if (group.entries.length > groupSizeLimit) {
@@ -164,9 +192,9 @@ final class RelationMap {
                 .map!(a => a.related.byValue.sum)
                 .minIndex;
 
-            // Move the entry
+            // Move the entry into the new group
             auto entry = group.entries[lowest];
-            newGroup.entries ~= entry;
+            newGroup ~= entry;
             group.entries = group.entries.remove(lowest);
 
             // Split the group starting from that entry
@@ -189,7 +217,11 @@ final class RelationMap {
 
     }
 
-    private void crackSplit(MapGroup input, MapGroup output, MapEntry entry) {
+    private void crackSplit(MapGroup input, MapGroup output, MapEntry entry)
+    in (output.entries.isSorted, "Output must be sorted (at entry)")
+    do {
+
+        scope (exit) assert(output.entries.isSorted, "Output must be sorted");
 
         import std.array;
 
@@ -202,7 +234,7 @@ final class RelationMap {
             const noun = dictionary.findWord(relation).noun;
 
             // TODO: don't reset relations; keep sentiment
-            output.entries ~= MapEntry(relation, noun, 0, null);
+            output ~= MapEntry(relation, noun, 0, null);
 
             // Remove from the original range
             input.entries = input.entries.remove!(a => a.text == relation);
