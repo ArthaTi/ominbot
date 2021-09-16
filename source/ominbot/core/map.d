@@ -66,14 +66,6 @@ final class RelationMap {
 
     }
 
-    /// Generate text based on the map.
-    string[] generate(MapGroup[] group) {
-
-        // TODO
-        return [];
-
-    }
-
     /// Feed text into the model to let it learn.
     /// Returns: Group the model ended on after learning.
     MapGroup feed(MapGroup group, string text) @trusted {

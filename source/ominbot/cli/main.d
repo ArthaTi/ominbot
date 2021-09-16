@@ -101,6 +101,8 @@ bool readPrompt(Bot bot) {
 
 void runCommand(Bot bot, string[] argv) {
 
+    auto dummyEvent = Event(userID, serverID, channelID, null);
+
     switch (argv[0]) {
 
         case "user":
@@ -111,11 +113,21 @@ void runCommand(Bot bot, string[] argv) {
 
         case "f":
         case "force":
-            bot.requestResponse();
+
+            import std.string;
+
+            if (argv.length > 1) {
+
+                dummyEvent.messageText = argv[1..$].join(" ");
+                bot.pushEvent(dummyEvent);
+
+            }
+
+            bot.requestResponse(dummyEvent);
             break;
 
         default:
-            bot.pushCommand(Event(userID, serverID, channelID, null), argv);
+            bot.pushCommand(dummyEvent, argv);
             break;
 
     }

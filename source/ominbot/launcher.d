@@ -39,7 +39,7 @@ interface Bot {
     void pushCommand(Event event, string[] argv);
 
     /// Request an instance response from the bot.
-    void requestResponse();
+    void requestResponse(Event event);
 
     /// Poll the bot for new events.
     Event[] poll();

@@ -68,10 +68,11 @@ final class Ominbot : Bot {
 
     }
 
-    override void requestResponse() {
+    override void requestResponse(Event event) {
 
-        // TODO: choose a reasonable channel
-        eventQueue ~= Event(0, 1, 1, makeMessage);
+        // Send a response
+        event.messageText = makeMessage(event);
+        eventQueue ~= event;
 
     }
 
@@ -100,44 +101,85 @@ final class Ominbot : Bot {
 
     }
 
-    string makeMessage() {
+    string makeMessage(Event event) {
 
-        import std.array, std.random;
+        import std.array, std.range, std.random, std.algorithm;
 
-        return "";
+        // Get target word count
+        const wordCount = uniform!"[]"(fetchWordsMin, fetchWordsMax);
 
-        version (none) {
+        // Get the target group
+        auto group = groups.get(event.targetChannel, map.root);
 
-            const wordCount = uniform!"[]"(2, maxWords);
+        string[] words;
+        MapGroup lastGroup;
 
-            string[] words;
-            FetchOptions options;
+        // Fill the word list
+        while (words.length < wordCount) {
 
-            // Fill the word list
-            while (words.length < wordCount) {
+            auto relations = group.relatedExcept(lastGroup).array;
+            const changeGroup = relations.length != 0;
 
-                options.minRadius = words.length;
+            // Find another group
+            if (changeGroup) {
 
-                // Find new words
-                if (auto word = map.fetch(options)) {
-
-                    words ~= word.text;
-                    options.encouraged   = word.following[0..5];
-                    options.discouraged ~= word.text;
-
-                }
-
-                // No word found! Tragedy!
-                else break;
+                auto thisGroup = group;
+                group = relations.choice;
+                lastGroup = thisGroup;
 
             }
 
-            // No words at all!
-            if (words.length == 0) return "...";
+            const addWords = group.entries.length != 0;
 
-            return words.join(" ");
+            // Ignore empty groups
+            if (addWords) {
+
+                // Get a couple words from the group
+                auto groupWordCount = 1;
+
+                // Increment word count until
+                while (true) {
+
+                    // Proceed only if random conditions is satisfied
+                    if (uniform01 > fetchGroupRepeat) break;
+
+                    // Prevent adding more words than necessary
+                    if (words.length + groupWordCount > wordCount) break;
+
+                    // Don't add more words than allowed per group
+                    if (groupWordCount == fetchGroupMax) break;
+
+                    // Don't add more words than available within the group
+                    if (groupWordCount == group.entries.length) break;
+
+                    groupWordCount++;
+
+                }
+
+                words ~= group.entries.dup
+                    .partialShuffle(groupWordCount)
+                    .take(groupWordCount)
+                    .map!(a => a.text)
+                    .array;
+
+            }
+
+            // Couldn't change the group
+            if (!changeGroup) {
+
+                // There are no words to choose from, restore last group
+                if (!addWords && lastGroup) group = lastGroup;
+
+                break;
+
+            }
 
         }
+
+        // Update the group
+        groups[event.targetChannel] = group;
+
+        return words.length ? words.join(" ") : "...";
 
     }
 

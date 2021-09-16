@@ -112,7 +112,7 @@ class MapGroup {
 
         import std.algorithm;
 
-        return related.filter!(a => a != group);
+        return related.filter!(a => a !is group);
 
     }
 
@@ -127,7 +127,7 @@ class MapGroup {
 
     import std.range;
 
-    private auto searchRelatedImpl() @trusted {
+    private auto searchRelatedImpl() {
 
         import std.range, std.algorithm;
 
@@ -139,7 +139,7 @@ class MapGroup {
     }
 
     /// Get children at second depth level.
-    private auto deepChildren() @trusted {
+    private auto deepChildren() {
 
         import std.algorithm;
 
