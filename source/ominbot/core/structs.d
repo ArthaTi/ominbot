@@ -1,6 +1,7 @@
 module ominbot.core.structs;
 
 import std.range;
+import std.datetime;
 import std.typecons;
 
 import ominbot.core.params;
@@ -104,9 +105,18 @@ class MapGroup {
     /// Related groups
     MapGroup[] related;
 
+    /// Last time this group had been used.
+    SysTime lastUsage;
+
     this() {
 
         id = nextID++;
+
+    }
+
+    bool disabled() {
+
+        return lastUsage + fetchGroupDisableFor > Clock.currTime;
 
     }
 
@@ -159,17 +169,22 @@ class MapGroup {
 
     /// Find the closest instance of one of the given phrases within the map.
     /// Params:
-    ///     phrases = Phrases to search for.
-    ///     limit   = Maximum distance from this group to search in. Defaults to maximum lookup distance.
+    ///     phrases     = Phrases to search for.
+    ///     onlyEnabled = Ignore disabled entries.
+    ///     limit       = Maximum distance from this group to search in. Defaults to maximum lookup distance.
     /// Returns: Target group and the encountered phrase, (`null`, `null`) if not found.
-    Tuple!(MapGroup, MapEntry) findRelated(string[] phrases, size_t limit = maxLookupDistance) {
+    Tuple!(MapGroup, MapEntry) findRelated(string[] phrases, bool onlyEnabled, size_t limit = maxLookupDistance) {
 
         import std.algorithm;
 
         // Perform the lookup
         MapEntry foundPhrase;
         auto result = chain([this], searchRelated)
+            .take(limit)
             .find!((a) {
+
+                // If looking for enabled groups only, ignore disabled ones
+                if (onlyEnabled && a.disabled) return false;
 
                 auto entry = a.entries.findAmong(phrases);
 
@@ -190,7 +205,8 @@ class MapGroup {
 
     }
 
-    /// Find all connected groups, by distance.
+    /// Returns a range with every group connected to this one, recursively. Groups are ordered by depth, so closest
+    /// nodes will be first.
     auto searchRelated() {
 
         return related.chain(searchRelatedImpl);
