@@ -7,12 +7,15 @@ import std.datetime;
 import ominbot.launcher;
 
 import ominbot.core.map;
+import ominbot.core.markov;
 import ominbot.core.params;
 import ominbot.core.structs;
 import ominbot.core.commands;
 
 
 @safe:
+
+version = UseMarkov;
 
 
 static this() {
@@ -24,11 +27,23 @@ static this() {
 
 final class Ominbot : Bot {
 
-    SysTime lastEvent;
-    RelationMap map;
-    bool[ulong] admins;
-    MapGroup[ulong] groups;
-    Event[] eventQueue;
+    /// Bot data.
+    public {
+
+        SysTime lastEvent;
+        bool[ulong] admins;
+        MapGroup[ulong] groups;
+        Event[] eventQueue;
+
+    }
+
+    // Models
+    public {
+
+        RelationMap map;
+        MarkovModel markov;
+
+    }
 
     this() {
 
@@ -36,10 +51,27 @@ final class Ominbot : Bot {
 
         map = new RelationMap;
 
-        writefln!"loading model...";
+        // TODO: use bot api loading callbacks?
 
         // Load the corpus
-        map.feed(map.root, fs.readText("resources/bot-corpus.txt"));
+        writefln!"loading corpus...";
+        auto corpus = fs.readText("resources/bot-corpus.txt");
+
+        // Load the model
+        version (UseMarkov) {
+
+            writefln!"loading markov model...";
+
+            markov.feed(corpus);
+
+        }
+        else {
+
+            writefln!"loading relation map model...";
+
+            map.feed(map.root, corpus);
+
+        }
 
     }
 
@@ -53,8 +85,15 @@ final class Ominbot : Bot {
         // Get group for this channel
         if (auto group = event.targetChannel in groups) {
 
+            // Feed the model
+            version (UseMarkov) {
+
+                markov.feed(event.messageText);
+
+            }
+
             // Feed data relative to that group
-            *group = map.feed(*group, event.messageText);
+            else *group = map.feed(*group, event.messageText);
 
         }
 
@@ -106,40 +145,58 @@ final class Ominbot : Bot {
 
     string makeMessage(Event event) {
 
-        import std.datetime;
-        import std.array, std.range, std.algorithm;
+        version (UseMarkov) {
 
-        // Get target word count
-        const wordCount = uniform!"[]"(fetchPhrasesMin, fetchPhrasesMax);
+            import ominbot.core.dictionary;
+            import std.array, std.string, std.algorithm;
 
-        // Get the target group
-        auto group = groups.get(event.targetChannel, map.groups.choice);
+            auto dict = getDictionary;
+            auto context = dict.splitWords(event.messageText)
+                .map!"a.word".array;
 
-        MapEntry[] output;
-        MapGroup lastGroup;
-
-        // Fill the word list
-        while (output.length < wordCount) {
-
-            // Attempt matching frequently appearing phrases at first
-            if (!findFollowingPhrases(output, group)) {
-
-                // Then search for relations
-                findRelatedPhrases(output, group);
-
-            }
+            return markov.generate(0, uniform!"[]"(markovWordsMin, markovWordsMax), context)
+                .join(" ");
 
         }
 
-        // Update the group
-        groups[event.targetChannel] = group;
+        else {
 
-        return output.length ? output.map!"a.text".join(" ") : "...";
+            import std.datetime;
+            import std.array, std.range, std.algorithm;
+
+            // Get target word count
+            const wordCount = uniform!"[]"(fetchPhrasesMin, fetchPhrasesMax);
+
+            // Get the target group
+            auto group = groups.get(event.targetChannel, map.groups.choice);
+
+            MapEntry[] output;
+            MapGroup lastGroup;
+
+            // Fill the word list
+            while (output.length < wordCount) {
+
+                // Attempt matching frequently appearing phrases at first
+                if (!findFollowingPhrases(output, group)) {
+
+                    // Then search for relations
+                    findRelatedPhrases(output, group);
+
+                }
+
+            }
+
+            // Update the group
+            groups[event.targetChannel] = group;
+
+            return output.length ? output.map!"a.text".join(" ") : "...";
+
+        }
 
     }
 
     /// Lookup phrases to match the last chosen word
-    bool findFollowingPhrases(ref MapEntry[] phrases, ref MapGroup group) {
+    private bool findFollowingPhrases(ref MapEntry[] phrases, ref MapGroup group) {
 
         if (!phrases.length) return false;
 
@@ -163,7 +220,7 @@ final class Ominbot : Bot {
     }
 
     /// Find possibly related phrases
-    bool findRelatedPhrases(ref MapEntry[] phrases, ref MapGroup group) {
+    private bool findRelatedPhrases(ref MapEntry[] phrases, ref MapGroup group) {
 
         import std.uni;
         import std.array, std.range, std.algorithm;

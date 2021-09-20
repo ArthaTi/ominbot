@@ -42,8 +42,8 @@ final class RelationMap {
 
         import std.array;
 
-        return splitWords(text)
-            .map!(a => MapEntry(a, false, 0, null))
+        return dictionary.splitWords(text)
+            .map!(a => MapEntry(a.word, false, 0, null))
             .array;
 
     }
@@ -251,43 +251,6 @@ final class RelationMap {
     private auto splitLines(string text) {
 
         return text.splitter("\n");
-
-    }
-
-    private string[] splitWords(string text) @trusted {
-
-        import std.range;
-        import std.typecons;
-        import std.uni, std.conv, std.string;
-
-        // Strip on whitespace
-        return text.splitWhen!((a, b) => a.isWhite)
-
-            // Remove non alpha-numeric content from the words
-            .map!(a => tuple(
-                // [0]: word
-                a.filter!(b => b.isAlphaNum)
-                    .to!string
-                    .toLower,
-                // [1]: marks
-                a.filter!(b => ".!?‽".canFind(b))
-                    .take(1)
-                    .to!string
-            ))
-
-            // Remove empty items
-            .filter!(a => a[0].length)
-
-            // Remove long numbers
-            .filter!(a => a[0].all!(b => !b.isNumber) || a[0].length <= 4)
-
-            // Only take in nouns
-            .filter!(a => dictionary.findWord(a[0]).noun)
-
-            // Add marks back in, but only if they're all the same
-            .map!(a => a[0] ~ a[1])
-
-            .array;
 
     }
 

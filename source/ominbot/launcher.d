@@ -114,11 +114,11 @@ struct OminbotLoader {
                 // Unload the library
                 Runtime.unloadLibrary(library);
 
-                writefln!"Reloading Ominbot...";
+                writefln!"reloading Ominbot...";
 
             }
 
-            else writefln!"Loading Ominbot...";
+            else writefln!"loading Ominbot...";
 
             assert(libExists, "Failed to load, ominbot:core has not been found");
 

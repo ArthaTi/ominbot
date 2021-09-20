@@ -24,7 +24,13 @@
 				"source/ominbot/core"
 			],
 			"targetPath": "build",
-			"targetType": "dynamicLibrary"
+			"targetType": "dynamicLibrary",
+			"configurations": [
+				{
+					"name": "markov",
+					"versions": ["Ominbot_Markov"]
+				}
+			]
 		},
 		{
 			"dependencies": {

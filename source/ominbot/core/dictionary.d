@@ -17,7 +17,7 @@ shared static this() @system {
 
     Dictionary tmp;
 
-    writefln!"Loading dictionary...";
+    writefln!"loading dictionary...";
 
     tmp.build("resources/nouns.txt", 0, true);
 
@@ -130,6 +130,50 @@ struct Dictionary {
         if (sentiment > 0) return positive[].choice;
         if (sentiment < 0) return negative[].choice;
         else assert(false);
+
+    }
+
+    /// Split text into words.
+    Word[] splitWords(string text) @trusted const {
+
+        // TODO: parse sentence ends, required for markov omin
+
+        import std.range;
+        import std.typecons;
+        import std.algorithm;
+        import std.uni, std.conv, std.string;
+
+        // Strip on whitespace
+        return text.splitWhen!((a, b) => a.isWhite)
+
+            // Remove non alpha-numeric content from the words
+            .map!(a => tuple(
+                // [0]: word
+                a.filter!(b => b.isAlphaNum)
+                    .to!string
+                    .toLower,
+                // [1]: marks
+                a.filter!(b => ".!?‽".canFind(b))
+                    .take(1)
+                    .to!string
+            ))
+
+            // Remove empty items
+            .filter!(a => a[0].length)
+
+            // Remove long numbers
+            .filter!(a => a[0].all!(b => !b.isNumber) || a[0].length <= 4)
+
+            // Get the word
+            .map!(a => tuple(findWord(a[0]), a[1]))
+
+            // Only take in nouns
+            .filter!(a => a[0].noun)
+
+            // Add marks back in
+            .map!(a => Word(a[0].word ~ a[1], a[0].sentiment, a[0].noun))
+
+            .array;
 
     }
 
