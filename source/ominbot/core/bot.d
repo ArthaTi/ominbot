@@ -47,7 +47,7 @@ final class Ominbot : Bot {
 
     this() {
 
-        import fs = std.file;
+        import std.file : readText;
 
         map = new RelationMap;
 
@@ -55,21 +55,22 @@ final class Ominbot : Bot {
 
         // Load the corpus
         writefln!"loading corpus...";
-        auto corpus = fs.readText("resources/bot-corpus.txt");
+        const corpusPath = "resources/bot-corpus.txt";
 
         // Load the model
         version (UseMarkov) {
 
             writefln!"loading markov model...";
 
-            markov.feed(corpus);
+            markov.feed(File(corpusPath));
 
         }
         else {
 
             writefln!"loading relation map model...";
 
-            map.feed(map.root, corpus);
+            auto corpus = fs.readText();
+            map.feed(map.root, corpusPath.readText);
 
         }
 

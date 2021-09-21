@@ -27,6 +27,9 @@ public {
     /// minumum if it finds no appropriate words to follow.
     enum markovWordsMin = 2, markovWordsMax = 5;
 
+    /// Chance to skip a word — instead of inserting it in the model, continue to the next word.
+    enum markovSkipWord = 1/3;
+
 }
 
 /// Options applying to the relation map model.

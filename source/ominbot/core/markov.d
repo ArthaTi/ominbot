@@ -33,36 +33,69 @@ struct MarkovItem {
 alias MarkovEntry = MarkovItem[];
 alias MarkovModel = MarkovEntry[string];
 
-void feed(ref MarkovModel model, string text) {
+void feed(T)(ref MarkovModel model, T text) @trusted {
+
+    import std.conv, std.traits;
 
     auto dictionary = getDictionary();
+    size_t progress;
 
-    // TODO: load line by line
-    auto words = dictionary.splitWords(text);
+    // Load as string
+    static if (isSomeString!T) {
 
-    if (words.empty) return;
+        const total = text.length;
+        auto range = text.splitter("\n");
 
-    // Insert the first word at an empty segment
-    model.require("", []).updateEntry([], words.front);
+    }
 
-    // Rewrite to use partial
-    foreach (i, word; words.enumerate) {
+    // Load as file
+    else static if (is(T == File)) {
 
-        if (i && i % 100_000 == 0) writefln!"Building model: %s words out of %s"(i, words.length);
+        const total = text.size;
+        auto range = text.byLine;
 
-        auto nextWord = i+1 < words.length
-            ? words[i+1]
-            : Word.init;
+    }
 
-        // Get the current context
-        const context = words[0 .. i+1]
-            .tail(contextSize)
-            .map!"a.word"
-            .filter!"a.length"
-            .array;
+    else static assert(false, "type unsupported by markov.feed");
 
-        // Update the entry model
-        model.require(word.word, []).updateEntry(context, nextWord);
+    // Go line by line
+    foreach (line; range) {
+
+        progress += line.length + 1;
+
+        // Provide loading info
+        if (progress % 500_000 <= line.length) {
+
+            writefln!"loading model... ~%skB/%skB"(progress/1000, total/1000);
+
+        }
+
+        // Parse words
+        auto words = dictionary.splitWords(line.to!string);
+
+        // No words given?
+        if (words.empty) continue;
+
+        // Add an empty word at start
+        words = [Word.init] ~ words;
+
+        foreach (i, word; words.enumerate) {
+
+            auto nextWord = i+1 < words.length
+                ? words[i+1]
+                : Word.init;
+
+            // Get the current context
+            const context = words[0 .. i+1]
+                .tail(contextSize)
+                .map!"a.word"
+                .filter!"a.length"
+                .array;
+
+            // Update the entry model
+            model.require(word.word, []).updateEntry(context, nextWord);
+
+        }
 
     }
 
@@ -87,9 +120,6 @@ string[] generate(ref MarkovModel model, int humor, int wordCount, string[] cont
         if (!context.length) return;
 
         const index = uniform(0, context.length);
-
-        import std.stdio : writefln;
-        writefln!"stealing word %s from context %s"(context[index], context);
 
         // Fail chance is probably pretty big unless the prompt uses only nouns
         // Hence this is a rather safe operation and there's still a big chance to reuse the word
@@ -140,6 +170,9 @@ string[] generate(ref MarkovModel model, int humor, int wordCount, string[] cont
 
                 lastWord = output[$-2];
 
+                // Too many spaces!
+                if (output.length > 3 * wordCount) break;
+
             }
 
         }
@@ -152,6 +185,14 @@ string[] generate(ref MarkovModel model, int humor, int wordCount, string[] cont
         if (auto part = lastWord in model) {
 
             entry = *part;
+
+            // Add a chance to skip a word
+            if (uniform01 < markovSkipWord) {
+
+                auto newPart = getWord() in model;
+                entry = newPart ? *newPart : *part;
+
+            }
 
             continue;
 
@@ -186,8 +227,8 @@ private MarkovItem getBestItem(ref MarkovEntry entry, string[] context, int humo
 
     auto sorted = entry.schwartzSort!(
         (MarkovItem a) => log2(a.occurences.get(context, 0))
-            + (humorLimit + a.nextWord.sentiment * humor) * 2 / humorLimit
-            + 3 * setIntersection(a.before[], context.sort.filter!"a.length").walkLength,
+            + (humorLimit + a.nextWord.sentiment * humor) * 2 / humorLimit  // this is probably not correct...
+            + 3 * setIntersection(a.before[], context.dup.sort.filter!"a.length").walkLength,
         "a > b"
     );
 
