@@ -33,9 +33,20 @@ struct MarkovItem {
 alias MarkovEntry = MarkovItem[];
 alias MarkovModel = MarkovEntry[string];
 
-void feed(T)(ref MarkovModel model, T text) @trusted {
+/// Update the model.
+void feed(T, Model)(ref Model model, T text, shared Object mutex) @trusted {
 
     import std.conv, std.traits;
+
+    static assert (is(Model == MarkovModel) || is(Model == shared MarkovModel),
+        "Model type must either be Model or shared Model");
+
+    // Got a shared model
+    static if (is(Model == shared MarkovModel)) {
+
+        assert(mutex !is null, "Mutex cannot be null for a shared model");
+
+    }
 
     auto dictionary = getDictionary();
     size_t progress;
@@ -92,8 +103,29 @@ void feed(T)(ref MarkovModel model, T text) @trusted {
                 .filter!"a.length"
                 .array;
 
-            // Update the entry model
-            model.require(word.word, []).updateEntry(context, nextWord);
+            void submit() {
+
+                if (auto entry = word.word in model) {
+
+                    updateEntry(*cast(MarkovEntry*) entry, context, nextWord);
+
+                }
+
+                else {
+
+                    MarkovEntry newEntry;
+                    newEntry.updateEntry(context, nextWord);
+                    model[word.word] = cast(shared) newEntry;
+
+                }
+
+            }
+
+            // Update the entry model (1. sync version)
+            if (mutex) synchronized (mutex) submit();
+
+            // 2. thread-local version
+            else submit();
 
         }
 

@@ -18,7 +18,7 @@ import ominbot.core.commands;
 version = UseMarkov;
 
 
-static this() {
+shared static this() {
 
     // Load the bot in
     OminbotLoader.loadBot(new Ominbot);
@@ -41,11 +41,11 @@ final class Ominbot : Bot {
     public {
 
         RelationMap map;
-        MarkovModel markov;
+        shared MarkovModel markov;
 
     }
 
-    this() {
+    this(string fun = __FUNCTION__) {
 
         import std.file : readText;
 
@@ -53,16 +53,25 @@ final class Ominbot : Bot {
 
         // TODO: use bot api loading callbacks?
 
-        // Load the corpus
-        writefln!"loading corpus...";
-        const corpusPath = "resources/bot-corpus.txt";
+        enum corpusPath = "resources/bot-corpus.txt";
 
         // Load the model
         version (UseMarkov) {
 
+            import std.concurrency;
+
             writefln!"loading markov model...";
 
-            markov.feed(File(corpusPath));
+            () @trusted {
+
+                // Load the Markov model in the background
+                spawn(function(shared Ominbot bot) {
+
+                    bot.markov.feed(File(corpusPath), bot);
+
+                }, cast(shared) this);
+
+            }();
 
         }
         else {
@@ -89,7 +98,11 @@ final class Ominbot : Bot {
             // Feed the model
             version (UseMarkov) {
 
-                markov.feed(event.messageText);
+                synchronized (this) () @trusted {
+
+                    markov.feed(event.messageText, cast(shared) this);
+
+                }();
 
             }
 
@@ -149,13 +162,49 @@ final class Ominbot : Bot {
         version (UseMarkov) {
 
             import ominbot.core.dictionary;
-            import std.array, std.string, std.algorithm;
+            import std.uni, std.array, std.string, std.algorithm;
 
             auto dict = getDictionary;
             auto context = dict.splitWords(event.messageText)
                 .map!"a.word".array;
 
-            return markov.generate(0, uniform!"[]"(markovWordsMin, markovWordsMax), context)
+            string[] addCommas(string[] arr) {
+
+                foreach (i, ref word; arr[0 .. $-1]) {
+
+                    // Ignore empty words
+                    if (word.length == 0) continue;
+
+                    // Ignore words with punctuation
+                    if (word.back.isPunctuation) continue;
+
+                    // If the next word is empty
+                    if (arr[i+1].length == 0) {
+
+                        // Append a comma
+                        word ~= ",";
+
+                    }
+
+                }
+
+                return arr;
+
+            }
+
+            auto markovResult = () @trusted {
+
+                synchronized (this) {
+
+                    auto nmarkov = cast(MarkovModel) markov;
+                    return nmarkov.generate(0, uniform!"[]"(markovWordsMin, markovWordsMax), context);
+
+                }
+
+            }();
+
+            return addCommas(markovResult)
+                .filter!(a => a.length)
                 .join(" ");
 
         }

@@ -143,6 +143,8 @@ struct Dictionary {
         import std.algorithm;
         import std.uni, std.conv, std.string;
 
+        alias isNumeric = all!isNumber;
+
         // Strip on whitespace
         return text.splitWhen!((a, b) => a.isWhite)
 
@@ -162,13 +164,17 @@ struct Dictionary {
             .filter!(a => a[0].length)
 
             // Remove long numbers
-            .filter!(a => a[0].all!(b => !b.isNumber) || a[0].length <= 4)
+            .filter!(a => !a[0].isNumeric || a[0].length <= 4)
 
             // Get the word
             .map!(a => tuple(findWord(a[0]), a[1]))
 
             // Only take in nouns
-            .filter!(a => a[0].noun)
+            .filter!(a => a[0].noun || a[0].word.isNumeric)
+
+            // If marks are present add an empty word after
+            .map!(a => a[1].length ? [a, tuple(Word.init, "")] : [a])
+            .joiner
 
             // Add marks back in
             .map!(a => Word(a[0].word ~ a[1], a[0].sentiment, a[0].noun))
