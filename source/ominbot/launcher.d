@@ -44,6 +44,11 @@ interface Bot {
     /// Poll the bot for new events.
     Event[] poll();
 
+    /// Set a new progress callback for the bot. The callback may be `null`, in order to unset the callback.
+    ///
+    /// Percent is a either a percentage value from 0 to 100, or 255 if the exact progress isn't known.
+    void progressCallback(void delegate(string type, ubyte percentage) @safe);
+
     /// Make the target user admin.
     void setAdmin(ulong id);
 
@@ -77,9 +82,6 @@ struct OminbotLoader {
         mutex = new shared Object;
 
     }
-
-    void delegate(ubyte percent) dictionaryProgress;
-    void delegate(ubyte percent) modelProgress;
 
     /// Load a new bot to replace the old one.
     static void loadBot(Bot bot) @trusted {
@@ -126,9 +128,9 @@ struct OminbotLoader {
             library = Runtime.loadLibrary(libraryPath);
             lastModified = nowModified;
 
-        }
+            return cast() instance;
 
-        return cast() instance;
+        }
 
     }
 

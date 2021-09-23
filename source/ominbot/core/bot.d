@@ -34,6 +34,7 @@ final class Ominbot : Bot {
         bool[ulong] admins;
         MapGroup[ulong] groups;
         Event[] eventQueue;
+        Logger logger;
 
     }
 
@@ -45,38 +46,39 @@ final class Ominbot : Bot {
 
     }
 
-    this(string fun = __FUNCTION__) {
+    this() {
 
         import std.file : readText;
 
-        map = new RelationMap;
-
-        // TODO: use bot api loading callbacks?
-
         enum corpusPath = "resources/bot-corpus.txt";
+
+        // Initialize fields
+        this.map = new RelationMap;
 
         // Load the model
         version (UseMarkov) {
 
             import std.concurrency;
 
-            writefln!"loading markov model...";
+            logger.loading("markov model", 0);
 
             () @trusted {
 
                 // Load the Markov model in the background
                 spawn(function(shared Ominbot bot) {
 
-                    bot.markov.feed(File(corpusPath), bot);
+                    bot.markov.feed(File(corpusPath), bot, cast() bot.logger);
 
                 }, cast(shared) this);
 
             }();
 
         }
+
+        // Old relationship map model
         else {
 
-            writefln!"loading relation map model...";
+            logger.loading("relationship map model", 0);
 
             auto corpus = fs.readText();
             map.feed(map.root, corpusPath.readText);
@@ -113,6 +115,13 @@ final class Ominbot : Bot {
 
         // Group not found, insert from root
         else groups[event.targetChannel] = map.feed(map.groups.choice, event.messageText);
+
+    }
+
+    /// Update the callback.
+    override void progressCallback(typeof(Logger.progressCallback) cb) {
+
+        logger.progressCallback = cb;
 
     }
 

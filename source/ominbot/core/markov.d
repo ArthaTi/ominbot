@@ -7,6 +7,7 @@ import std.algorithm;
 import std.container;
 
 import ominbot.core.params;
+import ominbot.core.structs;
 import ominbot.core.dictionary;
 
 
@@ -34,7 +35,7 @@ alias MarkovEntry = MarkovItem[];
 alias MarkovModel = MarkovEntry[string];
 
 /// Update the model.
-void feed(T, Model)(ref Model model, T text, shared Object mutex) @trusted {
+void feed(T, Model)(ref Model model, T text, shared Object mutex, Logger logger = Logger.init) @trusted {
 
     import std.conv, std.traits;
 
@@ -77,7 +78,7 @@ void feed(T, Model)(ref Model model, T text, shared Object mutex) @trusted {
         // Provide loading info
         if (progress % 500_000 <= line.length) {
 
-            writefln!"loading model... ~%skB/%skB"(progress/1000, total/1000);
+            logger.loading("model", 100 * progress / total);
 
         }
 

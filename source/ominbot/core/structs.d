@@ -269,3 +269,33 @@ class MapGroup {
     }
 
 }
+
+/// Helper for logging messages.
+struct Logger {
+
+    void delegate(string type, ubyte percentage) progressCallback;
+
+    /// Update the "loading screen"
+    /// Params:
+    ///     type       = The bot module that is currently loading.
+    ///     percentage = Percentage, if known, determining how much was done.
+    void loading(string type, ubyte percentage = 255) {
+
+        if (progressCallback) {
+
+            progressCallback(type, percentage);
+
+        }
+
+    }
+
+    /// Ditto
+    void loading(string type, ulong percentage)
+    in (percentage <= 100)
+    do {
+
+        loading(type, cast(ubyte) percentage);
+
+    }
+
+}

@@ -15,33 +15,43 @@ import ominbot.launcher;
 
 public {
 
+    enum CSI = "\x1B\x5B";
     ulong userID = 1, serverID = 1, channelID = 1;
-
-}
-
-void progress(string name)(ubyte percent) {
-
-    writefln!"%sloading %s %s%%"(percent > 0 ? "\r" : "", name, percent);
 
 }
 
 void main() {
 
     OminbotLoader loader;
+    string progressBuffer;
 
-    loader.dictionaryProgress = (a) => a.progress!"dictionary";
-    loader.modelProgress = (a) => a.progress!"model";
+    void progress(string name, ubyte percent) {
+
+        progressBuffer = percent == 255
+            ? format!"%sloading %s%s...\n"(CSI ~ "36m", name, CSI ~ "m")
+            : format!"%sloading %s%s: %s%%\n"(CSI ~ "36m", name, CSI ~ "m", percent);
+
+    }
 
     while (true) {
 
         auto bot = loader.update();
         bot.setAdmin(1);
+        bot.progressCallback(&progress);
+
+        // Write the loading buffer
+        write(progressBuffer);
+        progressBuffer = "";
 
         // Process events
         foreach (event; bot.poll) {
 
-            writefln!"to(%s) in(%s/%s)\n%s"(event.user, event.targetServer, event.targetChannel,
-                event.messageText);
+            writefln!"%sto%s(%s) %sin%s(%s/%s)"(
+                CSI ~ "96m", CSI ~ "m", event.user,
+                CSI ~ "96m", CSI ~ "m", event.targetServer,
+                event.targetChannel,
+            );
+            writeln(event.messageText);
 
         }
 
@@ -56,8 +66,6 @@ void main() {
 bool readPrompt(Bot bot) {
 
     try {
-
-        enum CSI = "\x1B\x5B";
 
         // Request a from the user
         writef!"%somin%s# "(CSI ~ "32m", CSI ~ "m");

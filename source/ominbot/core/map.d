@@ -68,9 +68,9 @@ final class RelationMap {
 
     /// Feed text into the model to let it learn.
     /// Returns: Group the model ended on after learning.
-    MapGroup feed(MapGroup group, string text) @trusted {
+    MapGroup feed(MapGroup group, string text, Logger logger = Logger.init) @trusted {
 
-        import std.stdio, std.random;
+        import std.random;
 
         size_t progress;
 
@@ -82,7 +82,7 @@ final class RelationMap {
             // Provide loading info
             if (progress % 200_000 <= line.length) {
 
-                writefln!"loading model... ~%skB/%skB, %s groups built"(progress/1000, text.length/1000, groups.length);
+                logger.loading("model", progress / text.length);
                 break; // TODO optimize and don't
                 // or lazy-load
 
