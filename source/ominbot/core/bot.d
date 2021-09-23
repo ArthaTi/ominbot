@@ -27,6 +27,8 @@ shared static this() {
 
 final class Ominbot : Bot {
 
+    enum corpusPath = "resources/bot-corpus.txt";
+
     /// Bot data.
     public {
 
@@ -49,8 +51,6 @@ final class Ominbot : Bot {
     this() {
 
         import std.file : readText;
-
-        enum corpusPath = "resources/bot-corpus.txt";
 
         // Initialize fields
         this.map = new RelationMap;
@@ -89,27 +89,36 @@ final class Ominbot : Bot {
 
     override void pushEvent(Event event) {
 
+        import std.file : append;
+        import std.string : stripRight;
+
         const admin = isAdmin(event.user);
+
+        // Pre-process the event
+        event.messageText = event.messageText.stripRight;
 
         // Check for commands
         if (this.runCommands(event, admin)) return;
 
+        // Push the data to the corpus file
+        append(corpusPath, event.messageText ~ "\n");
+
+        // Feed the markov model
+        version (UseMarkov) {
+
+            synchronized (this) () @trusted {
+
+                markov.feed(event.messageText, cast(shared) this);
+
+            }();
+
+        }
+
         // Get group for this channel
-        if (auto group = event.targetChannel in groups) {
-
-            // Feed the model
-            version (UseMarkov) {
-
-                synchronized (this) () @trusted {
-
-                    markov.feed(event.messageText, cast(shared) this);
-
-                }();
-
-            }
+        else if (auto group = event.targetChannel in groups) {
 
             // Feed data relative to that group
-            else *group = map.feed(*group, event.messageText);
+            *group = map.feed(*group, event.messageText);
 
         }
 
