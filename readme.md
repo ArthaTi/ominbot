@@ -7,6 +7,9 @@ memes it made into the chat. It will also get angry or happy based on whatever h
 
 Made for Ooer.
 
+Note: Within the code, Omin has he/him pronouns. In Ooer, Omin has declared to be a bi male, but this might be different
+if you run him with your own corpus.
+
 ## Configuration
 
 You will have to create or modify the following files:
@@ -17,9 +20,9 @@ You will have to create or modify the following files:
   * You will have to configure and specify the characters in `source/ominbot/image.d`'s `static this`.
     Parameter numbers are in order: x offset, y offset, character width. You will also have to configure
     the `textHeight` option.
-* `source/ominbot/params.d` — Bot parameters, defaults should be fine, but you can change those if you want to tweak
+* `source/ominbot/core/params.d` — Bot parameters, defaults should be fine, but you can change those if you want to tweak
   its behavior.
 
-The bot also requires two runtime arguments:
+The bot also requires one runtime argument:
 
-`dub -- "discord token" "imgbb token"`
+`dub -- "discord token"`

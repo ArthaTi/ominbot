@@ -70,13 +70,22 @@ void feed(T, Model)(ref Model model, T text, shared Object mutex, Logger logger 
 
     else static assert(false, "type unsupported by markov.feed");
 
+
+    /// Send progress update messages once per bytes read.
+    enum progressPerBytes = 500_000;
+    bool issueProgressMsg = total > progressPerBytes;
+
+    // Add loading status for edges
+    if (issueProgressMsg) logger.loading("model", 0);
+    scope (exit) if (issueProgressMsg) logger.loading("model", 100);
+
     // Go line by line
     foreach (line; range) {
 
         progress += line.length + 1;
 
         // Provide loading info
-        if (progress % 500_000 <= line.length) {
+        if (progress % progressPerBytes <= line.length) {
 
             logger.loading("model", 100 * progress / total);
 

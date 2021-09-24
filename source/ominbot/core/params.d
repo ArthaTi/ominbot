@@ -5,6 +5,9 @@ import core.time;
 /// General Omin options
 public {
 
+    /// A value from 0 to 255 determining how greatly events should affect Omin's mood.
+    enum ubyte moodChangeIntensity = 15;
+
     /// URL address for the `public/` directory where Omin will place images and data dumps.
     debug enum publicURL = "http://localhost";
     else  enum publicURL = "https://omin.samerion.com";

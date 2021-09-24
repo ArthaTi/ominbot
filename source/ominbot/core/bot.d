@@ -11,6 +11,7 @@ import ominbot.core.markov;
 import ominbot.core.params;
 import ominbot.core.structs;
 import ominbot.core.commands;
+import ominbot.core.emotions;
 
 
 @safe:
@@ -18,6 +19,8 @@ import ominbot.core.commands;
 version = UseMarkov;
 
 
+version (unittest) { }
+else
 shared static this() {
 
     // Load the bot in
@@ -32,18 +35,38 @@ final class Ominbot : Bot {
     /// Bot data.
     public {
 
+        /// Time of the last event.
         SysTime lastEvent;
+
+        /// Admins of the bot.
         bool[ulong] admins;
-        MapGroup[ulong] groups;
+
+        /// Currently queued events to return when polling.
         Event[] eventQueue;
+
+        /// Bot's current logger instance.
         Logger logger;
+
+    }
+
+    /// Bot status.
+    public {
+
+        /// Current bot emotions per *server*.
+        Emotions[ulong] emotions;
+
+        /// Active relationship map groups per *channel*.
+        MapGroup[ulong] groups;
 
     }
 
     // Models
     public {
 
+        /// The relationship map model.
         RelationMap map;
+
+        /// Markov model.
         shared MarkovModel markov;
 
     }

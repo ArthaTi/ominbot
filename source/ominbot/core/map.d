@@ -72,7 +72,15 @@ final class RelationMap {
 
         import std.random;
 
+        /// Send progress update messages once per bytes read.
+        enum progressPerBytes = 500_000;
+        bool issueProgressMsg = text.length > progressPerBytes;
+
         size_t progress;
+
+        // Add loading status for edges
+        if (issueProgressMsg) logger.loading("model", 0);
+        scope (exit) if (issueProgressMsg) logger.loading("model", 100);
 
         // Add stuff line by line
         foreach (line; splitLines(text)) {
@@ -80,7 +88,7 @@ final class RelationMap {
             progress += line.length + 1;
 
             // Provide loading info
-            if (progress % 200_000 <= line.length) {
+            if (progress % progressPerBytes <= line.length) {
 
                 logger.loading("model", progress / text.length);
                 break; // TODO optimize and don't
