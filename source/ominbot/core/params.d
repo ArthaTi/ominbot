@@ -8,6 +8,10 @@ public {
     /// A value from 0 to 255 determining how greatly events should affect Omin's mood.
     enum ubyte moodChangeIntensity = 15;
 
+    /// Chance to send a random response after a random event.
+    debug enum responseChance = 1/5.0;
+    else  enum responseChance = 1/120.0;
+
     /// URL address for the `public/` directory where Omin will place images and data dumps.
     debug enum publicURL = "http://localhost:8000";
     else  enum publicURL = "https://omin.samerion.com";
@@ -28,7 +32,7 @@ public {
     enum markovWordsMin = 2, markovWordsMax = 5;
 
     /// Chance to skip a word — instead of inserting it in the model, continue to the next word.
-    enum markovSkipWord = 1/3;
+    enum markovSkipWord = 1/3.0;
 
 }
 
@@ -48,7 +52,7 @@ public {
     enum fetchPhrasesMin = 2, fetchPhrasesMax = 5;
 
     /// Chance to fetch more than one word from a single group.
-    enum fetchGroupRepeat = 1/4;
+    enum fetchGroupRepeat = 1/4.0;
 
     /// Max words to fetch from a single group.
     enum fetchGroupMax = 3;
@@ -99,5 +103,12 @@ public {
 
     enum imageMinForegroundItems = 1;
     enum imageMaxForegroundItems = 3;
+
+    /// Chance to make an image after being a text response had been requested.
+    enum triggerImageChance = 1/120.0;
+
+    /// Chance to make an image after any event instead of a regular response.
+    debug enum randomImageChance = 1/10.0;
+    else  enum randomImageChance = 1/80.0;
 
 }

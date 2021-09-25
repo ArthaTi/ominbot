@@ -112,7 +112,7 @@ final class Ominbot : Bot {
 
     }
 
-    override void pushEvent(Event event) {
+    override void pushEvent(Event event, bool requestResponse) {
 
         import std.file : append;
         import std.string : stripRight;
@@ -122,8 +122,16 @@ final class Ominbot : Bot {
         // Pre-process the event
         event.messageText = event.messageText.stripRight;
 
+
         // Check for commands
         if (this.runCommands(event, admin)) return;
+
+        // Check for response requests
+        else if (requestResponse) makeResponse(event, requestResponse);
+
+        // Make random responses
+        else if (uniform01 < responseChance) makeResponse(event, requestResponse);
+
 
         // Push the data to the corpus file
         append(corpusPath, event.messageText ~ "\n");
@@ -178,11 +186,28 @@ final class Ominbot : Bot {
 
     }
 
-    override void requestResponse(Event event) {
+    /// Prepare a response for the event.
+    /// Params:
+    ///     input = Request event.
+    ///     random = If true, the response is random, not requested by the user.
+    void makeResponse(Event input, bool requested) {
+
+        const chance = requested
+            ? triggerImageChance
+            : randomImageChance;
+
+        Event output = input;
+        scope (success) eventQueue ~= output;
+
+        // Give a chance to make an image
+        if (uniform01 < chance) {
+
+            output.messageText = makeImage(input);
+
+        }
 
         // Send a response
-        event.messageText = makeMessage(event).join(" ");
-        eventQueue ~= event;
+        else output.messageText = makeMessage(input).join(" ");
 
     }
 

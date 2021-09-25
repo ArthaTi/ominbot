@@ -33,13 +33,13 @@ struct Event {
 interface Bot {
 
     /// Notify the bot of an event within the channel.
-    void pushEvent(Event event);
+    /// Params:
+    ///     event = The event that has occurred.
+    ///     requestResponse = If true, a request from the bot is requested.
+    void pushEvent(Event event, bool requestResponse);
 
     /// Request the bot to execute a command.
     void pushCommand(Event event, string[] argv);
-
-    /// Request an instance response from the bot.
-    void requestResponse(Event event);
 
     /// Poll the bot for new events.
     Event[] poll();

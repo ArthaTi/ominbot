@@ -83,7 +83,7 @@ bool readPrompt(Bot bot) {
             const event = Event(userID, serverID, channelID, msg);
 
             // Send to omin
-            bot.pushEvent(event);
+            bot.pushEvent(event, false);
 
             return true;
 
@@ -109,7 +109,7 @@ bool readPrompt(Bot bot) {
 
 void runCommand(Bot bot, string[] argv) {
 
-    auto dummyEvent = Event(userID, serverID, channelID, null);
+    auto input = Event(userID, serverID, channelID, null);
 
     switch (argv[0]) {
 
@@ -126,16 +126,15 @@ void runCommand(Bot bot, string[] argv) {
 
             if (argv.length > 1) {
 
-                dummyEvent.messageText = argv[1..$].join(" ");
-                bot.pushEvent(dummyEvent);
+                input.messageText = argv[1..$].join(" ");
 
             }
 
-            bot.requestResponse(dummyEvent);
+            bot.pushEvent(input, true);
             break;
 
         default:
-            bot.pushCommand(dummyEvent, argv);
+            bot.pushCommand(input, argv);
             break;
 
     }
