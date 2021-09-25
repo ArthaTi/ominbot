@@ -249,16 +249,22 @@ final class Ominbot : Bot {
 
             auto markovResult = () @trusted {
 
+                import ominbot.core.utils;
+
                 synchronized (this) {
 
                     const emotion = emotions.get(event.targetServer, Emotions.init);
                     auto nmarkov = cast(MarkovModel) markov;
 
-                    return nmarkov.generate(
+                    // Generate some text
+                    const text = nmarkov.generate(
                         emotion.pleasure,
                         uniform!"[]"(markovWordsMin, markovWordsMax),
                         context
                     );
+
+                    // Amplify it
+                    return text.amplify(emotion);
 
                 }
 
