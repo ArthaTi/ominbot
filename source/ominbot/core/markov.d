@@ -162,6 +162,7 @@ string[] generate(ref MarkovModel model, short humor, int wordCount, string[] co
 
     string[] output;
     size_t pushedWords;  // Word count, excluding empty words
+    bool pushedRandomWord;
 
     // Initialize with sentence start context
     auto entry = model[""];
@@ -201,11 +202,13 @@ string[] generate(ref MarkovModel model, short humor, int wordCount, string[] co
     // Try getting the data
     while (pushedWords < wordCount) {
 
-        // The more emotional, the higher should be the chance
-        if (abs(humor) > uniform(50, 320)) {
+        // Pick a random word — the chance grows as omin gets more emotional
+        if (pushedRandomWord && abs(humor) > uniform(50, 320)) {
 
-            // Pick a random word
             output ~= randomWord();
+
+            // Don't repeat in the same message
+            pushedRandomWord = false;
 
         }
 
@@ -251,21 +254,20 @@ string[] generate(ref MarkovModel model, short humor, int wordCount, string[] co
 
         }
 
-        //
-        break;
+        // Found no words, but there are still some to add
+        if (pushedWords < markovWordsMin) {
 
-        version (none) {
-
-            // Found no words, try to use a random word
+            // Try to use a random word
             if (auto part = randomWord() in model) {
 
                 entry = *part;
 
             }
 
-        }
+            // :(
+            else break;
 
-        // :(
+        }
 
     }
 
@@ -278,7 +280,7 @@ private MarkovItem getBestItem(ref MarkovEntry entry, string[] context, short hu
     import std.math;
 
     auto sorted = entry.schwartzSort!(
-        (MarkovItem a) => log2(a.occurences.get(context, 0))
+        (MarkovItem a) => log2(a.occurences.get(context, 0)).clamp(0, 3)
             + 10 * a.nextWord.sentiment * humor / 255.0
             + 3 * setIntersection(a.before[], context.dup.sort.filter!"a.length").walkLength,
         "a > b"
