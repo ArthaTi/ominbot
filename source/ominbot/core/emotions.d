@@ -195,7 +195,10 @@ struct Emotions {
 
         if (clone.intensity == 0) return "Emotions(none)";
 
-        return format!"Emotions(%s°, %s%% %s)"(clone.angleNorm * 180 / PI, clone.intensity * 100 / 255, type);
+        return format!"Emotions(%s°, (%s, %s), %s%% %s)"(
+            clone.angleNorm * 180 / PI,
+            pleasure, activation,
+            clone.intensity * 100 / 255, type);
 
     }
 
