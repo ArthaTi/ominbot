@@ -77,3 +77,19 @@ public {
     static assert(inputEmotionLimit * triggerEmotionMultipler <= 300);
 
 }
+
+/// Options for controlling random events.
+public {
+
+    /// Time to elapse between two events.
+    enum eventFrequency = 1.minutes;
+
+    /// Value for primarily numeric values — won't affect events that, for example, send random messages, but will
+    /// adjust the effects of events like calming down.
+    ///
+    /// For example, setting a high event frequency to prevent frequent random messages might cause other events to be
+    /// ineffective, so increasing the value is important to keep their value.
+    enum eventValue = 5;
+    static assert(eventValue <= 255);
+
+}

@@ -7,6 +7,7 @@ import std.datetime;
 import ominbot.launcher;
 
 import ominbot.core.map;
+import ominbot.core.events;
 import ominbot.core.markov;
 import ominbot.core.params;
 import ominbot.core.structs;
@@ -188,10 +189,12 @@ final class Ominbot : Bot {
 
         const time = Clock.currTime;
 
-        if (time > lastEvent + 5.seconds) {
+        if (time > lastEvent + eventFrequency) {
 
             lastEvent = time;
-            // TODO
+
+            // Run a random event
+            events.choice()(this);
 
         }
 
