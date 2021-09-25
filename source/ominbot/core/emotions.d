@@ -92,7 +92,7 @@ struct Emotions {
         auto result = angle % circle;
 
         // Invert if negative
-        if (result < 0) result = circle - result;
+        if (result < 0) result = circle + result;
 
         return result % circle;
 
@@ -161,14 +161,23 @@ struct Emotions {
         const pleasureBefore = pleasure;
         const activationBefore = activation;
 
-        // Update the angle
+        // Get the new target values
         const pleasureAfter = cast(float) clamp(pleasureBefore + changeX, -255, 255);
         const activationAfter = cast(float) clamp(activationBefore + changeY, -255, 255);
+
+        // Calculate the target angle
         const targetAngle = PI/2 - atan2(activationAfter / 255.0, pleasureAfter / 255.0);
+        const angleDiff = targetAngle - angle;
+
+        // Adjust for rotation — we should only look at -90° to 90° range from current angle
+        const angleDiffAdjusted =
+              angleDiff > +PI ? angleDiff - PI*2  // over 90°, we should look for a lower angle
+            : angleDiff < -PI ? angleDiff + PI*2  // below 90°, we should look for a higher angle
+            : angleDiff;
 
         // Set the new angle
         const angleModifier = clamp(1 - intensity.abs/255.0, 0.1, 0.4);
-        angle += (targetAngle - angle) * angleModifier;
+        angle += angleDiffAdjusted * angleModifier;
 
         // Update the intensity
         const intensityChange = sin(angle) * changeX + cos(angle) * changeY;

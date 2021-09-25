@@ -129,9 +129,20 @@ final class Ominbot : Bot {
         // Feed the markov model
         version (UseMarkov) {
 
-            synchronized (this) () @trusted {
+            () @trusted {
 
-                markov.feed(event.messageText, cast(shared) this);
+                import std.conv, std.algorithm;
+
+                // Feed the model
+                const sentiment = inputWordPleasure * markov.feed(event.messageText, cast(shared) this);
+
+                // Limit the resulting sentiment
+                const clamped = sentiment
+                    .clamp(-inputEmotionLimit, inputEmotionLimit)
+                    .to!short;
+
+                // Update Omin's emotions
+                emotions.require(event.targetServer).move(clamped, 0);
 
             }();
 
@@ -237,8 +248,14 @@ final class Ominbot : Bot {
 
                 synchronized (this) {
 
+                    const emotion = emotions.get(event.targetServer, Emotions.init);
                     auto nmarkov = cast(MarkovModel) markov;
-                    return nmarkov.generate(0, uniform!"[]"(markovWordsMin, markovWordsMax), context);
+
+                    return nmarkov.generate(
+                        emotion.pleasure,
+                        uniform!"[]"(markovWordsMin, markovWordsMax),
+                        context
+                    );
 
                 }
 

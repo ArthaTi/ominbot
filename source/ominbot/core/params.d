@@ -20,9 +20,6 @@ public {
     /// Number of words to hold in the context.
     enum contextSize = 3;
 
-    /// Humor values limit. If this value is set to, for example, 50, Omin's humor could range from -50 to 50.
-    enum humorLimit = 50;
-
     /// The bot will only consider the top N model entries for the given leading word.
     enum worstFit = 3;
 
@@ -58,5 +55,25 @@ public {
 
     /// Disable fetching from the given group for the given time after it has been used.
     enum fetchGroupDisableFor = 2.hours;
+
+}
+
+/// Options for how emotions should work in Omin.
+public {
+
+    /// How much can a single word affect Omin's emotion pleasure axis.
+    enum inputWordPleasure = 5;
+    static assert(inputWordPleasure <= 255);
+
+    /// How much can a single message affect Omin's emotions at most, ranging from 0–255.
+    enum inputEmotionLimit = 25;
+    static assert(inputEmotionLimit <= 255);
+
+    /// Multiply the effect of the input in case it was a requested trigger (eg. omin was pinged). This will also extend
+    /// the emotion limit for those. For example, if the multipler is `2` and the limit is `5`, for trigger messages the
+    /// limit will be `10` instead.
+    // TODO: not implemented
+    enum triggerEmotionMultipler = 2;
+    static assert(inputEmotionLimit * triggerEmotionMultipler <= 300);
 
 }

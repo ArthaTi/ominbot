@@ -35,7 +35,11 @@ alias MarkovEntry = MarkovItem[];
 alias MarkovModel = MarkovEntry[string];
 
 /// Update the model.
-void feed(T, Model)(ref Model model, T text, shared Object mutex, Logger logger = Logger.init) @trusted {
+/// Returns: the sentiment of the given text.
+short feed(T, Model)(ref Model model, T text, shared Object mutex, Logger logger = Logger.init) @trusted
+out (r; -255 <= r)
+out (r; r <= 255)
+do {
 
     import std.conv, std.traits;
 
@@ -51,6 +55,8 @@ void feed(T, Model)(ref Model model, T text, shared Object mutex, Logger logger 
 
     auto dictionary = getDictionary();
     size_t progress;
+
+    short sentiment;
 
     // Load as string
     static if (isSomeString!T) {
@@ -113,6 +119,9 @@ void feed(T, Model)(ref Model model, T text, shared Object mutex, Logger logger 
                 .filter!"a.length"
                 .array;
 
+            // Update the sentiment
+            sentiment = clamp(sentiment + word.sentiment, -255, 255).to!short;
+
             void submit() {
 
                 if (auto entry = word.word in model) {
@@ -141,9 +150,11 @@ void feed(T, Model)(ref Model model, T text, shared Object mutex, Logger logger 
 
     }
 
+    return sentiment;
+
 }
 
-string[] generate(ref MarkovModel model, int humor, int wordCount, string[] context = []) {
+string[] generate(ref MarkovModel model, short humor, int wordCount, string[] context = []) {
 
     import std.math;
 
@@ -191,7 +202,7 @@ string[] generate(ref MarkovModel model, int humor, int wordCount, string[] cont
     while (pushedWords < wordCount) {
 
         // The more emotional, the higher should be the chance
-        if (abs(humor) > uniform(humorLimit, humorLimit * 5)) {
+        if (abs(humor) > uniform(50, 320)) {
 
             // Pick a random word
             output ~= randomWord();
@@ -258,18 +269,17 @@ string[] generate(ref MarkovModel model, int humor, int wordCount, string[] cont
 
     }
 
-    //return output.amplify(humor);
     return output;
 
 }
 
-private MarkovItem getBestItem(ref MarkovEntry entry, string[] context, int humor) {
+private MarkovItem getBestItem(ref MarkovEntry entry, string[] context, short humor) {
 
     import std.math;
 
     auto sorted = entry.schwartzSort!(
         (MarkovItem a) => log2(a.occurences.get(context, 0))
-            + (humorLimit + a.nextWord.sentiment * humor) * 2 / humorLimit  // this is probably not correct...
+            + 10 * a.nextWord.sentiment * humor / 255.0
             + 3 * setIntersection(a.before[], context.dup.sort.filter!"a.length").walkLength,
         "a > b"
     );
