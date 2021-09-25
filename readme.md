@@ -5,6 +5,8 @@ Ominous + bot = Ominbot.
 Ominbot is a stupid Markov Discord bot that will only use nouns. Additionally it is capable of posting even more stupid
 memes it made into the chat. It will also get angry or happy based on whatever happens in the chat.
 
+Warning: Omin's code is a mess result from many conflicting design decisions.
+
 Made for Ooer.
 
 ## Configuration
