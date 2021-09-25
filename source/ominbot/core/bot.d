@@ -1,5 +1,6 @@
 module ominbot.core.bot;
 
+import std.array;
 import std.stdio;
 import std.random;
 import std.datetime;
@@ -180,7 +181,7 @@ final class Ominbot : Bot {
     override void requestResponse(Event event) {
 
         // Send a response
-        event.messageText = makeMessage(event);
+        event.messageText = makeMessage(event).join(" ");
         eventQueue ~= event;
 
     }
@@ -212,12 +213,44 @@ final class Ominbot : Bot {
 
     }
 
-    string makeMessage(Event event) {
+    string makeImage(Event event) {
+
+        import dlib.image;
+        import ominbot.core.image;
+        import std.path, std.file, std.string;
+
+        auto topText = makeMessage(event);
+        auto bottomText = makeMessage(event);
+
+        // Perform the operation
+        auto image = mutilateImage(topText, bottomText);
+
+        // No image generated? Too bad...
+        if (image is null) return null;
+
+        // Get the path to save to
+        const outputPath = "public/img";
+        outputPath.mkdirRecurse;
+
+        const outputName = format!"output-%s.png"(Clock.currTime.toUnixTime);
+        const outputFile = outputPath.buildPath(outputName);
+
+        () @trusted {
+
+            image.savePNG(outputFile);
+
+        }();
+
+        return publicURL.buildPath("img", outputName);
+
+    }
+
+    string[] makeMessage(Event event) {
 
         version (UseMarkov) {
 
             import ominbot.core.dictionary;
-            import std.uni, std.array, std.string, std.algorithm;
+            import std.uni, std.string, std.algorithm;
 
             auto dict = getDictionary;
             auto context = dict.splitWords(event.messageText)
@@ -272,14 +305,14 @@ final class Ominbot : Bot {
 
             return addCommas(markovResult)
                 .filter!(a => a.length)
-                .join(" ");
+                .array;
 
         }
 
         else {
 
             import std.datetime;
-            import std.array, std.range, std.algorithm;
+            import std.range, std.algorithm;
 
             // Get target word count
             const wordCount = uniform!"[]"(fetchPhrasesMin, fetchPhrasesMax);
@@ -340,7 +373,7 @@ final class Ominbot : Bot {
     private bool findRelatedPhrases(ref MapEntry[] phrases, ref MapGroup group) {
 
         import std.uni;
-        import std.array, std.range, std.algorithm;
+        import std.range, std.algorithm;
 
         float distance = 0;
 

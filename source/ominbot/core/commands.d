@@ -145,6 +145,34 @@ void runCommands(Ominbot bot, Event input, string[] argv, bool admin) {
 
             break;
 
+        case "make image":
+        case "make an image":
+        case "make me an image":
+        case "yeet an image":
+        case "show an image":
+        case "show me an image":
+        case "hand over an image":
+        case "image":
+
+        case "make meme":
+        case "make a meme":
+        case "make me a meme":
+        case "yeet a meme":
+        case "show a meme":
+        case "show me a meme":
+        case "hand over a meme":
+        case "meme time":
+        case "meme":
+
+        case "show a funnie":
+
+            // Send a response
+            auto newEvent = input;
+            newEvent.messageText = bot.makeImage(input);
+            bot.eventQueue ~= newEvent;
+
+            break;
+
         default:
             throw new ArgException("unknown command");
 

@@ -9,7 +9,7 @@ public {
     enum ubyte moodChangeIntensity = 15;
 
     /// URL address for the `public/` directory where Omin will place images and data dumps.
-    debug enum publicURL = "http://localhost";
+    debug enum publicURL = "http://localhost:8000";
     else  enum publicURL = "https://omin.samerion.com";
 
 }
@@ -91,5 +91,13 @@ public {
     /// ineffective, so increasing the value is important to keep their value.
     enum eventValue = 5;
     static assert(eventValue <= 255);
+
+}
+
+/// Options for meme image generation.
+public {
+
+    enum imageMinForegroundItems = 1;
+    enum imageMaxForegroundItems = 3;
 
 }
