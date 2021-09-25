@@ -37,8 +37,8 @@ final class Ominbot : Bot {
     /// Bot data.
     public {
 
-        /// Time of the last event.
-        SysTime lastEvent;
+        /// Time of the last random event.
+        SysTime lastRandomEvent;
 
         /// Admins of the bot.
         bool[ulong] admins;
@@ -53,6 +53,9 @@ final class Ominbot : Bot {
 
     /// Bot status.
     public {
+
+        /// Number of events received since last event, per *server*.
+        size_t[ulong] inputQuantity;
 
         /// Current bot emotions per *server*.
         Emotions[ulong] emotions;
@@ -121,6 +124,9 @@ final class Ominbot : Bot {
 
         // Pre-process the event
         event.messageText = event.messageText.stripRight;
+
+        // Count the activity.
+        inputQuantity.require(event.targetServer, 0) += 1;
 
 
         // Check for commands
@@ -213,14 +219,36 @@ final class Ominbot : Bot {
 
     override Event[] poll() {
 
+        import std.conv, std.algorithm;
+
         const time = Clock.currTime;
 
-        if (time > lastEvent + eventFrequency) {
+        // Check for random events
+        if (time > lastRandomEvent + randomEventFrequency) {
 
-            lastEvent = time;
+            lastRandomEvent = time;
 
             // Run a random event
             events.choice()(this);
+
+            // Check input quantity
+            foreach (server, ref activity; inputQuantity) {
+
+                const emotionValue = inputEventInitialActivation + inputEventActivation * activity.to!ptrdiff_t;
+                const emotionChange = min(emotionValue, inputEventEmotionLimit).to!short;
+
+                // Update emotions
+                emotions.require(server, Emotions.init)
+                    .move(0, emotionChange);
+
+                import std.stdio;
+                debug writefln!"emotion update activity(%s) : emotion(%s) -> %s"(activity, emotionChange,
+                    emotions[server]);
+
+                // Reset the activity
+                activity = 0;
+
+            }
 
         }
 

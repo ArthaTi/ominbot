@@ -166,10 +166,25 @@ void runCommands(Ominbot bot, Event input, string[] argv, bool admin) {
 
         case "show a funnie":
 
+            enforce!ArgException(admin, "not admin");
+
             // Send a response
             auto newEvent = input;
             newEvent.messageText = bot.makeImage(input);
             bot.eventQueue ~= newEvent;
+
+            break;
+
+        case "random event":
+        case "do something":
+        case "event":
+
+            enforce!ArgException(admin, "not admin");
+
+            import std.datetime;
+
+            // Start a random event by resetting last event time
+            bot.lastRandomEvent = SysTime.fromUnixTime(0);
 
             break;
 

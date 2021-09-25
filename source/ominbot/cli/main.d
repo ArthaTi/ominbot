@@ -79,6 +79,9 @@ bool readPrompt(Bot bot) {
         // A chat message
         if (!command) {
 
+            // Ignore if the message is empty
+            if (msg.length == 0) return false;
+
             // Construct the event
             const event = Event(userID, serverID, channelID, msg);
 

@@ -14,7 +14,7 @@ void function(Ominbot bot)[] events = [
 
         foreach (ref emotions; bot.emotions.byValue) {
 
-            emotions.intensity -= eventValue;
+            emotions.intensity -= randomEventValue;
 
         }
 

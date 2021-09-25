@@ -12,10 +12,10 @@ string[] amplify(bool recursive = true)(const string[] input, Emotions emotions)
     const activation = emotions.activation;
 
     /// Capitalize the words unless inactive or happy.
-    const capitalize = activation > -60 * (1 + pleasure / 255);
+    const capitalize = activation > -50 * (1 + pleasure / 255.0);
 
     /// Give a chance to convert dots to ellipsis if inactive.
-    const makeEllipsis = activation < -60;
+    const makeEllipsis = activation < -50;
 
     string[] result;
 

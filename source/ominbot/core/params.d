@@ -80,21 +80,34 @@ public {
     enum triggerEmotionMultipler = 2;
     static assert(inputEmotionLimit * triggerEmotionMultipler <= 300);
 
+    /// Any event received will affect Omin's emotion activation axis by this value.
+    enum inputEventActivation = 1.5;
+    static assert(inputEventActivation <= 255);
+
+    /// How much can input events stimulate Omin between two random event triggers (see `randomEventFrequency`).
+    enum inputEventEmotionLimit = 30;
+    static assert(inputEventEmotionLimit <= 255);
+
+    /// Initial value of activation received from input events. For example, if between two random events, no events
+    /// occured, Omin's activation will be changed by this value.
+    enum inputEventInitialActivation = -15;
+    static assert(inputEventInitialActivation <= 255);
+
 }
 
 /// Options for controlling random events.
 public {
 
     /// Time to elapse between two events.
-    enum eventFrequency = 1.minutes;
+    enum randomEventFrequency = 3.minutes;
 
     /// Value for primarily numeric values — won't affect events that, for example, send random messages, but will
     /// adjust the effects of events like calming down.
     ///
     /// For example, setting a high event frequency to prevent frequent random messages might cause other events to be
     /// ineffective, so increasing the value is important to keep their value.
-    enum eventValue = 5;
-    static assert(eventValue <= 255);
+    enum randomEventValue = 10;
+    static assert(randomEventValue <= 255);
 
 }
 
