@@ -23,24 +23,34 @@ void addImage(SuperImage a, const ImageRegion b, uint offsetX, uint offsetY, flo
 
             if (ax >= a.width) break;
 
-            const black = vec4(0, 0, 0, 1);
-
             const aPixel = a[ax, ay];
-            const aAlpha = aPixel[3];
-            const aTransparent = aPixel * vec4(1, 1, 1, 0);
-
             const bPixel = (cast() b.img)[bx, by];
-            const bAlpha = bPixel[3];
-            const bTransparent = bPixel * vec4(1, 1, 1, 0);
 
-            a[ax, ay] = Color4f(
-                + aTransparent * (1 - bAlpha)
-                + bTransparent * bAlpha
-                + black * max(aAlpha, bAlpha)
-            );
+            a[ax, ay] = combinePixels(aPixel, bPixel);
 
         }
 
     }
+
+}
+
+/// Mixes two pixels into one, placing pixel B over pixel A.
+///
+/// If pixel B is opaque, will return pixel B.
+Color4f combinePixels(Color4f a, Color4f b) {
+
+    const black = vec4(0, 0, 0, 1);
+
+    const aAlpha = a[3];
+    const aTransparent = a * vec4(1, 1, 1, 0);
+
+    const bAlpha = b[3];
+    const bTransparent = b * vec4(1, 1, 1, 0);
+
+    return Color4f(
+        + aTransparent * (1 - bAlpha)
+        + bTransparent * bAlpha
+        + black * max(aAlpha, bAlpha)
+    );
 
 }

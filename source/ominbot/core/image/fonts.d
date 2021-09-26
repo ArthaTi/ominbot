@@ -7,6 +7,7 @@ import std.uni;
 import std.algorithm;
 
 import ominbot.core.image.utils;
+import ominbot.core.image.resources;
 
 
 @safe:
@@ -62,13 +63,9 @@ immutable {
 
 shared static this() @system {
 
-    import dlib.filesystem;
-
     alias BC = BitmapCharacter;
 
-    setFileSystem(new LocalFileSystem);
-
-    fontImpact = cast(immutable) Font(
+    fontImpact = immutable Font(
         61,
         20,
         [
@@ -113,10 +110,10 @@ shared static this() @system {
             '!': BC( 482, 144, 25),
             '?': BC( 510, 144, 39),
         ],
-        loadImage("resources/bot-impact.png")
+        impactBitmap
     );
 
-    fontPastelic = cast(immutable) Font(
+    fontPastelic = immutable Font(
         7,
         3,
         [
@@ -166,7 +163,7 @@ shared static this() @system {
             '8': BC(86, 7, 5),
             '9': BC(91, 7, 5),
         ],
-        loadImage("resources/cards/pastelic.png")
+        pastelicBitmap
     );
 
 
