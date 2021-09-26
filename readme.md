@@ -10,6 +10,8 @@ Made for Ooer.
 Note: Within the code, Omin has he/him pronouns. In Ooer, Omin has declared to be a bi male, but this might be different
 if you run him with your own corpus.
 
+Omin also includes the "Pastelic" bitmap pixelart font, which was made specifically for Omin.
+
 ## Configuration
 
 You will have to create or modify the following files:
@@ -17,7 +19,7 @@ You will have to create or modify the following files:
 * `resources/bot-positive.txt` — A list of words the bot will use and see as positive.
 * `resources/bot-negative.txt` — Same but negative.
 * `resources/bot-impact.png` — A font bitmap to be used by the bot. My instance uses Microsoft's Impact, hence the name.
-  * You will have to configure and specify the characters in `source/ominbot/image.d`'s `static this`.
+  * You will have to configure and specify the characters in `source/ominbot/fonts.d`'s `static this`.
     Parameter numbers are in order: x offset, y offset, character width. You will also have to configure
     the `textHeight` option.
 * `source/ominbot/core/params.d` — Bot parameters, defaults should be fine, but you can change those if you want to tweak

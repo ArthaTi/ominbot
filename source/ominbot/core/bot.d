@@ -269,7 +269,7 @@ final class Ominbot : Bot {
     string makeImage(Event event) {
 
         import dlib.image;
-        import ominbot.core.image;
+        import ominbot.core.image.meme;
         import std.path, std.file, std.string;
 
         auto topText = makeMessage(event);
