@@ -5,6 +5,7 @@ import dlib.image;
 
 import ominbot.core.image.card;
 import ominbot.core.image.utils;
+import ominbot.core.image.fonts;
 import ominbot.core.image.resources;
 
 /// Used to transform the original color palette from the image.
@@ -39,7 +40,8 @@ struct ColorPalette {
 /// Represents an item card.
 struct ItemCard {
 
-    string name;
+    /// List of words making up the name.
+    string[] name;
     uint id;
     string[3] tags;
 
@@ -48,6 +50,8 @@ struct ItemCard {
     ColorPalette contentColors;
 
     SuperImage render() {
+
+        import std.string;
 
         auto output = combineImages(
             ImageData(backgroundBitmap, backgroundColors),
@@ -58,7 +62,12 @@ struct ItemCard {
             ImageData(idBitmap,         contentColors),
         );
 
+        // Add item data
+        output.addText(fontPastelic, name, 9, 11, 102);
+        output.addText(fontPastelic, [id.format!"#%s"], 81, 21, 28);
 
+        // More details
+        output.addText(fontPastelic, ["\U0001F62C\U0001F60E"], 12, 98, 96);
 
         return output;
 
@@ -109,8 +118,10 @@ do {
 
 unittest {
 
+    import std.string;
+
     ItemCard card = {
-        name: "This is an item‽ No way",
+        name: "This is an item‽ No way.".split(" "),
         id: 9999,
         tags: ["huh", null, null],
 

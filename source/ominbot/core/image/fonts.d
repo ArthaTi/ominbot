@@ -36,11 +36,14 @@ struct Font {
     /// Calculate the width of the word.
     WordData wordData(string word) const {
 
+        import std.utf;
+
         WordData result;
 
-        foreach (letter; word.toUpper) {
+        foreach (letter; word.toUpper.byDchar) {
 
             auto item = letter in fontChars;
+
             if (item is null) continue;
 
             result.width += item.width;
@@ -115,7 +118,7 @@ shared static this() @system {
 
     fontPastelic = immutable Font(
         7,
-        3,
+        2,
         [
             'A': BC(  0, 0, 5),
             'B': BC(  5, 0, 5),
@@ -130,30 +133,31 @@ shared static this() @system {
             'K': BC( 48, 0, 5),
             'L': BC( 53, 0, 5),
             'M': BC( 58, 0, 7),
-            'N': BC( 65, 0, 4),
-            'O': BC( 69, 0, 5),
-            'P': BC( 74, 0, 5),
-            'Q': BC( 79, 0, 5),
-            'S': BC( 84, 0, 5),
-            'T': BC( 89, 0, 5),
-            'U': BC( 94, 0, 5),
-            'V': BC( 99, 0, 5),
-            'W': BC(104, 0, 7),
-            'X': BC(111, 0, 5),
-            'Y': BC(116, 0, 5),
-            'Z': BC(121, 0, 5),
+            'N': BC( 65, 0, 6),
+            'O': BC( 71, 0, 5),
+            'P': BC( 76, 0, 5),
+            'Q': BC( 81, 0, 5),
+            'R': BC( 81, 0, 5),
+            'S': BC( 91, 0, 5),
+            'T': BC( 96, 0, 5),
+            'U': BC(101, 0, 5),
+            'V': BC(106, 0, 5),
+            'W': BC(111, 0, 7),
+            'X': BC(118, 0, 5),
+            'Y': BC(123, 0, 5),
+            'Z': BC(128, 0, 5),
 
             '.': BC( 0, 7, 3),
             '!': BC( 3, 7, 3),
             '?': BC( 6, 7, 5),
-            '‽': BC(11, 7, 5),
-            '-': BC(16, 7, 5),
-            '—': BC(21, 7, 7),
-            '\U0001F62C': BC(29, 7, 8),  // unis
-            '\U0001F60E': BC(37, 7, 9),  // botto
+            '‽': BC(11, 7, 6),
+            '-': BC(17, 7, 5),
+            '—': BC(22, 7, 7),
+            '\U0001F62C': BC(30, 7, 8),  // unis
+            '\U0001F60E': BC(38, 7, 9),  // botto
 
-            '0': BC(46, 7, 5),
-            '1': BC(51, 7, 5),
+            '0': BC(47, 7, 5),
+            '1': BC(52, 7, 5),
             '2': BC(56, 7, 5),
             '3': BC(61, 7, 5),
             '4': BC(66, 7, 5),
@@ -162,6 +166,7 @@ shared static this() @system {
             '7': BC(81, 7, 5),
             '8': BC(86, 7, 5),
             '9': BC(91, 7, 5),
+            '#': BC(96, 7, 7),
         ],
         pastelicBitmap
     );
@@ -170,11 +175,13 @@ shared static this() @system {
 }
 
 /// Add text to given image in place.
-void addText(SuperImage a, immutable Font font, string[] words, uint offsetX, uint offsetY, uint width) @trusted {
+void addText(SuperImage a, immutable Font font, string[] words, uint offsetX, uint offsetY, uint width = 0) @trusted {
+
+    if (!width) width = a.width - offsetX;
 
     byte direction = 1;
 
-    foreach (line; spreadText(font, words, a.width)) {
+    foreach (line; spreadText(font, words, width)) {
 
         scope (exit) {
 
@@ -196,7 +203,7 @@ void addText(SuperImage a, immutable Font font, string[] words, uint offsetX, ui
             - font.spaceWidth;
 
         // Make sure the text is centered
-        auto position = (cast(int) a.width - lineWidth) / 2;
+        auto position = offsetX + (cast(int) width - lineWidth) / 2;
 
         // Generate the line
         foreach (word; line) {

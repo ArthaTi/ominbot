@@ -83,8 +83,8 @@ SuperImage mutilateImage(string[] top, string[] bottom, string baseImage = null)
     }
 
     // Add text
-    image.addText(fontImpact, top, 0, 0, image.width);
-    image.addText(fontImpact, bottom, 0, image.height - fontImpact.textHeight, image.width);
+    image.addText(fontImpact, top, 0, 0);
+    image.addText(fontImpact, bottom, 0, image.height - fontImpact.textHeight);
 
     // Save
     return image;
