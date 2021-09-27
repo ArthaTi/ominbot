@@ -3,6 +3,7 @@ module ominbot.core.image.card;
 import std.traits;
 import dlib.image;
 
+import ominbot.core.params;
 import ominbot.core.image.card;
 import ominbot.core.image.utils;
 import ominbot.core.image.fonts;
@@ -51,7 +52,7 @@ struct ItemCard {
 
     SuperImage render() {
 
-        import std.string;
+        import std.string, std.typecons;
 
         auto output = combineImages(
             ImageData(backgroundBitmap, backgroundColors),
@@ -62,14 +63,25 @@ struct ItemCard {
             ImageData(idBitmap,         contentColors),
         );
 
+        // Get text data for the name and strip lines if there are more than one
+        const nameWidth = 102;
+        const nameData = spreadText(fontPastelic, name, nameWidth)[0..1];
+
         // Add item data
-        output.addText(fontPastelic, name, 9, 11, 102);
-        output.addText(fontPastelic, [id.format!"#%s"], 81, 21, 28);
+        output.addText(fontPastelic, nameData, 9, 11, nameWidth);
+        output.addText(fontPastelic, [id.format!"#%s"], 81, 21, 27);
 
-        // More details
-        output.addText(fontPastelic, ["\U0001F62C\U0001F60E"], 12, 98, 96);
+        // Add tags
+        foreach_reverse (i, pos; [tuple(40, 154), tuple(13, 160), tuple(67, 160)]) {
 
-        return output;
+            const text = [tags[i].length ? tags[i] : "?"];
+
+            output.addText(fontPastelic, text, pos.expand, 40);
+
+        }
+
+        // Upscale the output
+        return output.upscale(cardUpscale);
 
     }
 
@@ -123,21 +135,21 @@ unittest {
     ItemCard card = {
         name: "This is an item‽ No way.".split(" "),
         id: 9999,
-        tags: ["huh", null, null],
+        tags: ["weapon", "elimination", "declaration"],
 
         borderColors: ColorPalette(
-            color3(0x414100),
-            color3(0x373700),
-            color3(0x505000),
+            color3(0x3b2f03),
+            color3(0x2d260b),
+            color3(0x1c1a00),
         ),
         backgroundColors: ColorPalette(
-            color3(0xffd765),
-            color3(0xe9ff65),
+            color3(0x473a07),
+            color3(0x6f3f1b),
         ),
         contentColors: ColorPalette(
-            color3(0x847b36),
-            color3(0x9b903f),
-            color3(0xc0b24e),
+            color3(0x643c00),
+            color3(0x875100),
+            color3(0xa05f00),
         )
     };
 

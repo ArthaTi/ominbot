@@ -54,3 +54,27 @@ Color4f combinePixels(Color4f a, Color4f b) {
     );
 
 }
+
+/// Upscale the image with the nearest-neighbor algorithm.
+SuperImage upscale(SuperImage a, uint scale) {
+
+    auto output = a.createSameFormat(a.width * scale, a.height * scale);
+
+    foreach (y; 0..a.height)
+    foreach (x; 0..a.width) {
+
+        const outputX = scale * x;
+        const outputY = scale * y;
+
+        foreach (yy; outputY .. outputY + scale)
+        foreach (xx; outputX .. outputX + scale) {
+
+            output[xx, yy] = a[x, y];
+
+        }
+
+    }
+
+    return output;
+
+}

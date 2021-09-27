@@ -33,6 +33,9 @@ struct Font {
     BitmapCharacter[dchar] fontChars;
     SuperImage fontBitmap;
 
+    /// Increase or decrease character spacing.
+    int spread;
+
     /// Calculate the width of the word.
     WordData wordData(string word) const {
 
@@ -46,7 +49,7 @@ struct Font {
 
             if (item is null) continue;
 
-            result.width += item.width;
+            result.width += item.width + spread;
             result.characters ~= *item;
 
         }
@@ -113,7 +116,8 @@ shared static this() @system {
             '!': BC( 482, 144, 25),
             '?': BC( 510, 144, 39),
         ],
-        impactBitmap
+        impactBitmap,
+        0
     );
 
     fontPastelic = immutable Font(
@@ -137,7 +141,7 @@ shared static this() @system {
             'O': BC( 71, 0, 5),
             'P': BC( 76, 0, 5),
             'Q': BC( 81, 0, 5),
-            'R': BC( 81, 0, 5),
+            'R': BC( 86, 0, 5),
             'S': BC( 91, 0, 5),
             'T': BC( 96, 0, 5),
             'U': BC(101, 0, 5),
@@ -168,20 +172,33 @@ shared static this() @system {
             '9': BC(91, 7, 5),
             '#': BC(96, 7, 7),
         ],
-        pastelicBitmap
+        pastelicBitmap,
+        -1
     );
 
 
 }
 
 /// Add text to given image in place.
-void addText(SuperImage a, immutable Font font, string[] words, uint offsetX, uint offsetY, uint width = 0) @trusted {
+void addText(SuperImage a, immutable Font font, const string[] words, uint offsetX, uint offsetY, uint width = 0)
+    @trusted
+do {
 
     if (!width) width = a.width - offsetX;
 
+    addText(a, font, spreadText(font, words, width), offsetX, offsetY, width);
+
+}
+
+void addText(SuperImage a, immutable Font font, const WordData[][] words, uint offsetX, uint offsetY, uint width = 0)
+    @trusted
+do {
+
+    import std.conv;
+
     byte direction = 1;
 
-    foreach (line; spreadText(font, words, width)) {
+    foreach (line; words) {
 
         scope (exit) {
 
@@ -203,7 +220,8 @@ void addText(SuperImage a, immutable Font font, string[] words, uint offsetX, ui
             - font.spaceWidth;
 
         // Make sure the text is centered
-        auto position = offsetX + (cast(int) width - lineWidth) / 2;
+        const totalSpread = font.spread * line.length.to!int;
+        auto position = offsetX + (cast(int) width - cast(int) lineWidth + totalSpread) / 2;
 
         // Generate the line
         foreach (word; line) {
@@ -217,7 +235,7 @@ void addText(SuperImage a, immutable Font font, string[] words, uint offsetX, ui
                     position, offsetY,
                 );
 
-                position += letter.width;
+                position += letter.width + font.spread;
 
             }();
 
@@ -227,7 +245,7 @@ void addText(SuperImage a, immutable Font font, string[] words, uint offsetX, ui
 
 }
 
-private const(WordData)[][] spreadText(immutable Font font, string[] words, uint imageWidth) {
+const(WordData)[][] spreadText(immutable Font font, const string[] words, uint imageWidth) {
 
     const(WordData)[][] lines = [[]];
 
@@ -241,7 +259,7 @@ private const(WordData)[][] spreadText(immutable Font font, string[] words, uint
         const data = font.wordData(word);
         const wordWidth = data.width + font.spaceWidth;
 
-        // Can fit on this line, or the line is empty
+        // The line is empty, or the word can fit in it
         if (!lines[$-1].length || lineWidth + data.width <= imageWidth) {
 
             lineWidth += wordWidth;

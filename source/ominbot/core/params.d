@@ -125,3 +125,11 @@ public {
     else  enum randomImageChance = 1/80.0;
 
 }
+
+/// Options for item card generation.
+public {
+
+    /// Number of times the cards should be upscaled, to make the pixelart look good with filtering.
+    enum cardUpscale = 3;
+
+}
