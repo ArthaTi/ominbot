@@ -241,7 +241,8 @@ final class Ominbot : Bot {
 
             if (isItem) {
 
-                makeItem(input, itemNumber.to!uint, words);
+                const item = makeItem(input, itemNumber.to!uint, words);
+                db.giveItem(item, input.user);
 
             }
 

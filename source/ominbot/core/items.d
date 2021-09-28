@@ -1,6 +1,7 @@
 module ominbot.core.items;
 
 import arsd.sqlite;
+import std.typecons;
 
 import ominbot.core.bot;
 import ominbot.core.image.card;
@@ -50,6 +51,11 @@ void prepareItems(Sqlite db) @trusted {
         )
 
     `);
+    db.query(`
+
+        CREATE UNIQUE INDEX IF NOT EXISTS inventory_unique ON inventory(owner_id, item_id)
+
+    `);
 
 }
 
@@ -87,7 +93,7 @@ debug void createSamples(Sqlite db) @trusted {
 /// Returns: The registered item, or the item returned.
 ItemCard createItem(Sqlite db, ItemCard card) @trusted {
 
-    import std.conv, std.string;
+    import std.string;
 
     // Perform this in a transaction
     db.query(`BEGIN TRANSACTION`);
@@ -110,16 +116,8 @@ ItemCard createItem(Sqlite db, ItemCard card) @trusted {
 
         assert(result.length == 1, "Invalid item row count after createItem SELECT query");
 
-        auto row = result.front;
-
-        ItemCard oldCard = {
-            id: row["id"].to!uint,
-            name: row["name"].split(" "),
-            tags: [row["tag1"], row["tag2"], row["tag3"]],
-            type: row["type"].to!ItemType,
-        };
-
-        return oldCard;
+        // Return the found item
+        return result.front.readCard();
 
     }
 
@@ -127,14 +125,62 @@ ItemCard createItem(Sqlite db, ItemCard card) @trusted {
 
 }
 
-void giveItem(Sqlite db, ItemCard card, size_t owner, size_t count = 1) @trusted {
+void giveItem(Sqlite db, const ItemCard card, size_t owner, size_t count = 1) @trusted {
 
-    assert(false, "unimplemented");
+    db.query(
+        `INSERT OR REPLACE INTO inventory(owner_id, item_id, count)
+        VALUES (?1, ?2, ?3 + COALESCE(
+            (SELECT count FROM inventory WHERE owner_id = ?1 AND item_id = ?2),
+            0
+        ))`,
+        owner, card.id, count
+    );
 
 }
 
 bool takeItem(Sqlite db, ItemCard card, size_t owner, size_t count = 1) @trusted {
 
     assert(false, "unimplemented");
+
+}
+
+/// Returns: A list of items and the number owned by the user.
+Tuple!(ItemCard, size_t)[] listItems(Sqlite db, size_t owner, size_t page = 1) @trusted {
+
+    import std.conv;
+
+    auto result = db.query(
+        `SELECT items.*, inventory.count FROM inventory JOIN items
+        ON inventory.item_id = items.id
+        WHERE inventory.owner_id = ?
+        ORDER BY items.id
+        LIMIT 10 OFFSET ?`,
+        owner, (page-1) * 10
+    );
+
+    typeof(return) cards;
+
+    foreach (row; result) {
+
+        cards ~= tuple(readCard(row), row["count"].to!size_t);
+
+    }
+
+    return cards;
+
+}
+
+private ItemCard readCard(Row row) @trusted {
+
+    import std.conv, std.string;
+
+    ItemCard card = {
+        id: row["id"].to!uint,
+        name: row["name"].split(" "),
+        tags: [row["tag1"], row["tag2"], row["tag3"]],
+        type: row["type"].to!ItemType,
+    };
+
+    return card;
 
 }

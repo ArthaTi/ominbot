@@ -11,6 +11,7 @@ import ominbot.launcher;
 
 import ominbot.core.bot;
 import ominbot.core.html;
+import ominbot.core.items;
 import ominbot.core.params;
 import ominbot.core.structs;
 import ominbot.core.emotions;
@@ -188,10 +189,6 @@ void runCommands(Ominbot bot, Event input, string[] argv, bool admin) {
 
             break;
 
-        case "give me item":
-        case "give":
-            throw new ArgException("not implemented");
-
         case "make item":
         case "create item":
         case "lookup item":
@@ -220,6 +217,43 @@ void runCommands(Ominbot bot, Event input, string[] argv, bool admin) {
             catch (ConvException) {
 
                 throw new ArgException("argument must be an unsigned integer");
+
+            }
+
+            break;
+
+        case "my items":
+        case "what items do i have":
+        case "what do i have":
+        case "show me my stuff":
+        case "show my stuff":
+        case "list my items":
+        case "items":
+        case "what do i have in my inventory":
+        case "inventory":
+
+            import std.algorithm;
+
+            try {
+
+                const pageNumber = argv.length > 1
+                    ? argv[1].to!int
+                    : 1;
+
+                const items = bot.db.listItems(input.user, pageNumber);
+
+                auto output = input;
+                output.messageText = format!"Your items:\n%sPage %s (try \"Omin, items 2\")"(
+                    items.map!(a => format!"— %sx %s. %s\n"(a[1], a[0].id, a[0].name.join(" "))).join(),
+                    pageNumber
+                );
+                bot.eventQueue ~= output;
+
+            }
+
+            catch (ConvException) {
+
+                throw new ArgException("first argument must be a number");
 
             }
 
