@@ -17,6 +17,7 @@ import ominbot.core.params;
 import ominbot.core.structs;
 import ominbot.core.commands;
 import ominbot.core.emotions;
+import ominbot.core.image.card;
 
 
 @safe:
@@ -92,6 +93,9 @@ final class Ominbot : Bot {
         // Connect to the database
         this.db = (() @trusted => new Sqlite("db.sqlite"))();
         this.db.prepareItems();
+
+        // Create samples for testing (TODO: move to unittests...?)
+        debug this.db.createSamples();
 
         // Load the model
         version (UseMarkov) {
@@ -205,8 +209,10 @@ final class Ominbot : Bot {
     /// Prepare a response for the event.
     /// Params:
     ///     input = Request event.
-    ///     random = If true, the response is random, not requested by the user.
+    ///     random = If true, the response was triggered randomly, not requested by the user.
     void makeResponse(Event input, bool requested) {
+
+        import std.uni, std.conv, std.algorithm;
 
         const chance = requested
             ? triggerImageChance
@@ -219,11 +225,30 @@ final class Ominbot : Bot {
         if (uniform01 < chance) {
 
             output.messageText = makeImage(input);
+            return;
 
         }
 
-        // Send a response
-        else output.messageText = makeMessage(input).join(" ");
+        // Generate some text to respond with
+        auto words = makeMessage(input);
+
+        // There are enough words to try adding an item
+        if (words.length >= 2) {
+
+            // If the first word is a number followed by dots
+            const itemNumber = words[0].filter!isNumber.to!string;
+            const isItem = itemNumber.length && words[0].endsWith(".");
+
+            if (isItem) {
+
+                makeItem(input, itemNumber.to!uint, words);
+
+            }
+
+        }
+
+        // Generate response text
+        output.messageText = words.join(" ");
 
     }
 
@@ -273,6 +298,30 @@ final class Ominbot : Bot {
     override void setAdmin(ulong id) {
 
         admins[id] = true;
+
+    }
+
+    ItemCard makeItem(Event event, uint itemNumber, ref string[] words) {
+
+        import std.format;
+
+        // TODO: tags
+
+        // Create an item card
+        ItemCard card = {
+
+            name: words[1..$],
+            id: itemNumber,
+
+        };
+
+        auto result = db.createItem(card);
+
+        // Found a matching item — use its name instead
+        // TODO keep tags in origin string if updated
+        words = [itemNumber.format!"%s."] ~ result.name;
+
+        return card;
 
     }
 

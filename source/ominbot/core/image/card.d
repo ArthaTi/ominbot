@@ -9,6 +9,13 @@ import ominbot.core.image.utils;
 import ominbot.core.image.fonts;
 import ominbot.core.image.resources;
 
+enum ItemType {
+
+    regular,
+    dark,
+
+}
+
 /// Used to transform the original color palette from the image.
 struct ColorPalette {
 
@@ -41,10 +48,12 @@ struct ColorPalette {
 /// Represents an item card.
 struct ItemCard {
 
+    uint id;
+
     /// List of words making up the name.
     string[] name;
-    uint id;
     string[3] tags;
+    ItemType type;
 
     ColorPalette borderColors;
     ColorPalette backgroundColors;

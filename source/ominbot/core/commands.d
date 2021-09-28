@@ -188,6 +188,43 @@ void runCommands(Ominbot bot, Event input, string[] argv, bool admin) {
 
             break;
 
+        case "give me item":
+        case "give":
+            throw new ArgException("not implemented");
+
+        case "make item":
+        case "create item":
+        case "lookup item":
+        case "inspect item":
+        case "item":
+
+            enforce!ArgException(admin, "not admin");
+            enforce!ArgException(argv.length > 1, "argument required: item number");
+
+            try {
+
+                // Get some text for the item name
+                // Note: first word of the message will be replaced
+                auto text = [""] ~ bot.makeMessage(input);
+
+                // Construct the item
+                const itemNumber = argv[1].to!uint;
+                const item = bot.makeItem(input, itemNumber, text);
+
+                // Send a response message
+                auto output = input;
+                output.messageText = text.join(" ");
+                bot.eventQueue ~= output;
+
+            }
+            catch (ConvException) {
+
+                throw new ArgException("argument must be an unsigned integer");
+
+            }
+
+            break;
+
         default:
             throw new ArgException("unknown command");
 
