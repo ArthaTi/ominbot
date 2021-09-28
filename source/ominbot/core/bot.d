@@ -1,5 +1,7 @@
 module ominbot.core.bot;
 
+import arsd.sqlite;
+
 import std.array;
 import std.stdio;
 import std.random;
@@ -8,6 +10,7 @@ import std.datetime;
 import ominbot.launcher;
 
 import ominbot.core.map;
+import ominbot.core.items;
 import ominbot.core.events;
 import ominbot.core.markov;
 import ominbot.core.params;
@@ -49,6 +52,9 @@ final class Ominbot : Bot {
         /// Bot's current logger instance.
         Logger logger;
 
+        /// Database connection.
+        Sqlite db;
+
     }
 
     /// Bot status.
@@ -82,6 +88,10 @@ final class Ominbot : Bot {
 
         // Initialize fields
         this.map = new RelationMap;
+
+        // Connect to the database
+        this.db = (() @trusted => new Sqlite("db.sqlite"))();
+        this.db.prepareItems();
 
         // Load the model
         version (UseMarkov) {

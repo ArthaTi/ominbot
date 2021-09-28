@@ -1,9 +1,13 @@
 {
 	"fileVersion": 1,
 	"versions": {
+		"arsd-official": "10.2.2",
 		"botan": "1.12.19",
 		"botan-math": "1.0.3",
 		"dcord": "0.0.5",
+		"ddbc": "0.5.3",
+		"derelict-pq": "2.2.0",
+		"derelict-util": "2.0.6",
 		"diet-ng": "1.7.5",
 		"dlib": "0.22.0",
 		"dmagick": "0.2.4",
@@ -13,6 +17,7 @@
 		"libevent": "2.0.2+2.0.16",
 		"memutils": "1.0.4",
 		"mir-linux-kernel": "1.0.1",
+		"mysql-native": "3.0.3",
 		"openssl": "1.1.6+1.0.1g",
 		"rcdata": "1.0.0-alpha.2",
 		"stdx-allocator": "2.77.5",

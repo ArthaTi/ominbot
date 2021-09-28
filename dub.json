@@ -9,6 +9,7 @@
 	"subPackages": [
 		{
 			"dependencies": {
+				"arsd-official:sqlite": "~>10.2.2",
 				"dlib": "~>0.22.0",
 				"elemi": "~>1.0.1",
 				"rcdata": ">=1.0.0-alpha.2 <1.1.0-0"
@@ -24,13 +25,7 @@
 				"source/ominbot/core"
 			],
 			"targetPath": "build",
-			"targetType": "dynamicLibrary",
-			"configurations": [
-				{
-					"name": "markov",
-					"versions": ["Ominbot_Markov"]
-				}
-			]
+			"targetType": "dynamicLibrary"
 		},
 		{
 			"dependencies": {

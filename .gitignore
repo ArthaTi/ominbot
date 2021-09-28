@@ -8,3 +8,4 @@ resources/bot-*
 *.lst
 *.kra~
 *.png~
+*.sqlite
