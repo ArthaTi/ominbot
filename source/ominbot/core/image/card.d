@@ -4,6 +4,8 @@ import std.traits;
 import dlib.image;
 
 import ominbot.core.params;
+import ominbot.core.emotions;
+
 import ominbot.core.image.card;
 import ominbot.core.image.utils;
 import ominbot.core.image.fonts;
@@ -23,6 +25,26 @@ struct ColorPalette {
     auto secondary  = color3(0xcecece);
     auto background = color3(0xffffff);
     auto line       = color3(0x000000);
+
+    /// Get a color for the current mood.
+    static ColorPalette moodColor(const Emotions emotions) {
+
+        import std.math;
+
+        Emotions emotion = emotions;
+        emotion.normalize();
+
+        const angle = emotion.angle * 180 / PI;
+        const saturation = 0.5 + emotion.intensity / 255.0 / 2;
+
+        ColorPalette result = {
+            primary: hsv(angle - 10, saturation, 0.8),
+            secondary: hsv(angle + 10, saturation, 0.8),
+        };
+
+        return result;
+
+    }
 
     Color4f apply(Color4f color) const {
 
@@ -55,14 +77,22 @@ struct ItemCard {
     string[3] tags;
     ItemType type;
 
-    ColorPalette borderColors;
-    ColorPalette backgroundColors;
-    ColorPalette contentColors;
+    ColorPalette palette;
 
-    SuperImage render() {
+    SuperImage render() const {
 
         import std.string, std.typecons;
 
+        // Create secondary palettes
+        ColorPalette backgroundColors = palette;
+        ColorPalette contentColors = {
+            primary: palette.primary * Color4f(0.6, 0.6, 0.6),
+            secondary: palette.primary * Color4f(0.8, 0.8, 0.8),
+            background: palette.primary,
+        };
+        ColorPalette borderColors = contentColors;
+
+        // Prepare the card image
         auto output = combineImages(
             ImageData(backgroundBitmap, backgroundColors),
             ImageData(detailsBitmap,    contentColors),
@@ -146,20 +176,10 @@ unittest {
         id: 9999,
         tags: ["weapon", "elimination", "declaration"],
 
-        borderColors: ColorPalette(
-            color3(0x3b2f03),
-            color3(0x2d260b),
-            color3(0x1c1a00),
-        ),
-        backgroundColors: ColorPalette(
+        palette: ColorPalette(
             color3(0x473a07),
             color3(0x6f3f1b),
         ),
-        contentColors: ColorPalette(
-            color3(0x643c00),
-            color3(0x875100),
-            color3(0xa05f00),
-        )
     };
 
     card.render.savePNG("resources/bot-unittest-card1.png");

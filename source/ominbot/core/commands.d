@@ -11,10 +11,10 @@ import ominbot.launcher;
 
 import ominbot.core.bot;
 import ominbot.core.html;
-import ominbot.core.items;
 import ominbot.core.params;
 import ominbot.core.structs;
 import ominbot.core.emotions;
+import ominbot.core.database.items;
 
 
 @safe:
@@ -219,6 +219,21 @@ void runCommands(Ominbot bot, Event input, string[] argv, bool admin) {
                 throw new ArgException("argument must be an unsigned integer");
 
             }
+
+            break;
+
+        case "remake item":
+        case "regenerate texture":
+        case "remake":
+        case "regen":
+            enforce!ArgException(admin, "not admin");
+            enforce!ArgException(argv.length > 1, "argument required: item number");
+
+            const card = bot.db.getItem(argv[1].to!uint);
+
+            auto output = input;
+            output.imageURL = bot.makeCardImage(card);
+            bot.eventQueue ~= output;
 
             break;
 

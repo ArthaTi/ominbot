@@ -227,7 +227,7 @@ void writeImage(string path) @trusted {
     if (!supportsImages) return;
 
     auto data = Base64.encode(cast(ubyte[]) path.read);
-    auto params = ",f=100,a=T,r=8";
+    auto params = ",f=100,a=T";
 
     auto chunked = data.chunks(chunkSize);
 

@@ -10,7 +10,6 @@ import std.datetime;
 import ominbot.launcher;
 
 import ominbot.core.map;
-import ominbot.core.items;
 import ominbot.core.events;
 import ominbot.core.markov;
 import ominbot.core.params;
@@ -18,6 +17,7 @@ import ominbot.core.structs;
 import ominbot.core.commands;
 import ominbot.core.emotions;
 import ominbot.core.image.card;
+import ominbot.core.database.items;
 
 
 @safe:
@@ -244,6 +244,8 @@ final class Ominbot : Bot {
                 const item = makeItem(input, itemNumber.to!uint, words);
                 db.giveItem(item, input.user);
 
+                output.imageURL = makeCardImage(item);
+
             }
 
         }
@@ -302,6 +304,7 @@ final class Ominbot : Bot {
 
     }
 
+    /// Make an item for the given card number. Will not generate an image for it.
     ItemCard makeItem(Event event, uint itemNumber, ref string[] words) {
 
         import std.format;
@@ -323,6 +326,30 @@ final class Ominbot : Bot {
         words = [itemNumber.format!"%s."] ~ result.name;
 
         return card;
+
+    }
+
+    /// Make an image for the card.
+    /// Returns: Path to the given image.
+    string makeCardImage(const ItemCard card) @trusted {
+
+        import dlib.image;
+        import std.path, std.file, std.string;
+
+        // Get the path to save to
+        const outputPath = "public/cards";
+        outputPath.mkdirRecurse;
+
+        const outputName = format!"card-%s.png"(card.id);
+        const outputFile = outputPath.buildPath(outputName);
+
+        () @trusted {
+
+            card.render().savePNG(outputFile);
+
+        }();
+
+        return publicURL.buildPath("cards", outputName);
 
     }
 
@@ -373,10 +400,10 @@ final class Ominbot : Bot {
 
                 foreach (i, ref word; arr[0 .. $-1]) {
 
-                    // Ignore empty words
+                    // Ignore if this word is empty
                     if (word.length == 0) continue;
 
-                    // Ignore words with punctuation
+                    // Or if it ends with punctuation
                     if (word.back.isPunctuation) continue;
 
                     // If the next word is empty

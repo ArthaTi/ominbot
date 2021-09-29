@@ -1,6 +1,6 @@
-/// Implements
-module ominbot.core.items;
+module ominbot.core.database.items;
 
+import dlib.image;
 import arsd.sqlite;
 import std.typecons;
 
@@ -31,7 +31,11 @@ void prepareItems(Sqlite db) @trusted {
             tag3 TEXT NOT NULL,
 
             -- Type of the item
-            type TEXT NOT NULL
+            type TEXT NOT NULL,
+
+            -- Colors for the item
+            primary_color INTEGER NOT NULL,
+            secondary_color INTEGER NOT NULL
         )
 
     `);
@@ -98,9 +102,10 @@ ItemCard createItem(Sqlite db, ItemCard card) @trusted {
     scope (failure) db.query(`ROLLBACK TRANSACTION`);
 
     try db.query(
-        `INSERT INTO items(id, name, type, tag1, tag2, tag3)
-        VALUES (?, ?, ?, ?, ?, ?)`,
-       card.id, card.name.join(" "), card.type, card.tags[0], card.tags[1], card.tags[2],
+        `INSERT INTO items(id, name, type, tag1, tag2, tag3, primary_color, secondary_color)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        card.id, card.name.join(" "), card.type, card.tags[0], card.tags[1], card.tags[2],
+        card.palette.primary.toInt, card.palette.secondary.toInt
     );
     // TODO: add tags on insertion
 
@@ -108,16 +113,26 @@ ItemCard createItem(Sqlite db, ItemCard card) @trusted {
     // TODO: update tag list
     catch (DatabaseException exc) {
 
-        auto result = db.query(`SELECT * FROM items WHERE id=?`, card.id);
-
-        assert(result.length == 1, exc.msg.format!"Invalid item row count after createItem; SELECT query %s");
-
-        // Return the found item
-        return result.front.readCard();
+        return db.getItem(card.id);
 
     }
 
    return card;
+
+}
+
+/// Get an item from the database by number.
+ItemCard getItem(Sqlite db, uint id) @trusted {
+
+    import std.format, std.exception;
+
+    auto result = db.query(`SELECT * FROM items WHERE id=?`, id);
+
+    // TODO: some other exception
+    enforce(result.length == 1, id.format!"No item with ID %s found");
+
+    // Return the found item
+    return result.front.readCard();
 
 }
 
@@ -175,8 +190,30 @@ private ItemCard readCard(Row row) @trusted {
         name: row["name"].split(" "),
         tags: [row["tag1"], row["tag2"], row["tag3"]],
         type: row["type"].to!ItemType,
+        palette: ColorPalette(
+            color3(row["primary_color"].to!int),
+            color3(row["secondary_color"].to!int),
+        ),
     };
 
     return card;
+
+}
+
+private int toInt(Color4f color) {
+
+    import std.conv, std.math;
+
+    return (round(color[0] * 255).to!int << 16)
+        + (round(color[1] * 255).to!int << 8)
+        + (round(color[2] * 255).to!int);
+
+}
+
+@system
+unittest {
+
+    const color = color3(0xb0b0b0);
+    assert(color.toInt == 0xb0b0b0);
 
 }
