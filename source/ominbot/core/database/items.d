@@ -62,6 +62,8 @@ void prepareItems(Sqlite db) @trusted {
 
 debug void createSamples(Sqlite db) @trusted {
 
+    import std.stdio;
+
     // Create an item card
     ItemCard card = {
 
@@ -84,6 +86,15 @@ debug void createSamples(Sqlite db) @trusted {
 
     assert(result1 == card);
     assert(result1 == result2);
+
+    // Test giving the item
+    db.giveItem(card, 256, 5);
+    assert( db.takeItem(card, 256, 3));  // 2 items left
+    assert(!db.takeItem(card, 256, 3));
+    assert( db.takeItem(card, 256, 2));  // no items left
+    assert(!db.takeItem(card, 256, 1));
+
+    writeln("database tests complete");
 
 }
 
@@ -149,9 +160,43 @@ void giveItem(Sqlite db, const ItemCard card, size_t owner, size_t count = 1) @t
 
 }
 
-bool takeItem(Sqlite db, ItemCard card, size_t owner, size_t count = 1) @trusted {
+bool takeItem(Sqlite db, const ItemCard card, size_t owner, size_t count = 1) @trusted {
 
-    assert(false, "unimplemented");
+    try {
+
+        auto result = db.query(
+            `UPDATE inventory
+            SET count = count - ?1
+            WHERE owner_id = ?2 AND item_id = ?3 AND count >= ?1
+            RETURNING count`,
+            count,owner, card.id
+        );
+
+        // No rows found, failure
+        if (result.empty) return false;
+
+        auto row = result.front;
+
+        // Found, but it was the last owned item
+        if (row["count"] == "0") {
+
+            db.query(
+                `DELETE FROM inventory
+                WHERE owner_id = ? AND item_id = ?`,
+                owner, card.id
+            );
+
+        }
+
+        return true;
+
+    }
+
+    catch (DatabaseException) {
+
+        return false;
+
+    }
 
 }
 

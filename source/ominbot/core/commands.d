@@ -294,6 +294,65 @@ void runCommands(Ominbot bot, Event input, string[] argv, bool admin) {
 
             break;
 
+        // Give an item to someone else
+        case "send item":
+        case "trade":
+        case "pay":
+        case "send":
+        case "give":
+
+            enforce!ArgException(argv.length > 1, "argument required: item to give, target user");
+
+            size_t targetUser;
+            uint targetItem;
+            bool userSpecified, itemSpecified;
+
+            foreach (arg; argv[1..$]) {
+
+                try {
+
+                    bool userArg = arg.skipOver("@");
+
+                    if (userArg) {
+                        targetUser = arg.to!size_t;
+                        userSpecified = true;
+                    }
+
+                    else {
+                        targetItem = arg.to!uint;
+                        itemSpecified = true;
+                    }
+
+                }
+
+                catch (ConvException) {
+
+                    throw new ArgException(arg.format!"argument \"%s\" was expected to be number");
+
+                }
+
+            }
+
+            {
+
+                import ominbot.core.image.card;
+
+                enforce!ArgException(itemSpecified, "no item chosen to send");
+                enforce!ArgException(userSpecified, "no target user specified");
+
+                // Make a dummy item
+                const item = ItemCard(targetItem);
+
+                enforce!ArgException(
+                    bot.db.takeItem(item, input.user),
+                    "you don't have enough of this item",
+                );
+                bot.db.giveItem(item, targetUser);
+
+            }
+
+            break;
+
         default:
             throw new ArgException("unknown command");
 

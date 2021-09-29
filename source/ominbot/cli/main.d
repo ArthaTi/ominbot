@@ -138,11 +138,16 @@ bool readPrompt(Bot bot) {
 
         }
 
-        // A command...
-        const cmd = msg.strip[1..$];
-        const arg = cmd.findSplit(" ");
+        import std.array;
 
-        bot.runCommand(arg ? [arg[0], arg[2]] : [cmd]);
+        // A command...
+        auto cmd = msg.strip[1..$];
+        auto argSplit = cmd.findSplit(" ");
+        auto arg = argSplit
+            ? [argSplit[0]] ~ argSplit[2].split(",").map!strip.array
+            : [cmd];
+
+        bot.runCommand(arg);
 
     }
 
