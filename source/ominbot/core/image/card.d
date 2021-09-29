@@ -27,7 +27,7 @@ struct ColorPalette {
     auto line       = color3(0x000000);
 
     /// Get a color for the current mood.
-    static ColorPalette moodColor(const Emotions emotions) {
+    static ColorPalette fromMood(const Emotions emotions) @trusted {
 
         import std.math;
 
@@ -39,7 +39,7 @@ struct ColorPalette {
 
         ColorPalette result = {
             primary: hsv(angle - 10, saturation, 0.8),
-            secondary: hsv(angle + 10, saturation, 0.8),
+            secondary: hsv(angle + 10, saturation, 0.9),
         };
 
         return result;
@@ -62,6 +62,18 @@ struct ColorPalette {
         }
 
         return color;
+
+    }
+
+    void opAssign(const ColorPalette other) @trusted {
+
+        import std.traits;
+
+        foreach (field; FieldNameTuple!ColorPalette) {
+
+            mixin("this." ~ field) = mixin("other." ~ field);
+
+        }
 
     }
 
@@ -90,7 +102,7 @@ struct ItemCard {
             secondary: palette.primary * Color4f(0.8, 0.8, 0.8),
             background: palette.primary,
         };
-        ColorPalette borderColors = contentColors;
+        ColorPalette borderColors = pickBorderColors(contentColors);
 
         // Prepare the card image
         auto output = combineImages(
@@ -121,6 +133,25 @@ struct ItemCard {
 
         // Upscale the output
         return output.upscale(cardUpscale);
+
+    }
+
+    private ColorPalette pickBorderColors(ColorPalette contentColors) const {
+
+        final switch (type) {
+
+            case ItemType.regular:
+                return contentColors;
+
+            case ItemType.dark:
+
+                return ColorPalette(
+                    contentColors.primary * Color4f(0.6, 0.6, 0.6),
+                    contentColors.primary * Color4f(0.4, 0.4, 0.4),
+                    contentColors.primary * Color4f(0.2, 0.2, 0.2),
+                );
+
+        }
 
     }
 
@@ -177,11 +208,15 @@ unittest {
         tags: ["weapon", "elimination", "declaration"],
 
         palette: ColorPalette(
-            color3(0x473a07),
             color3(0x6f3f1b),
+            color3(0x473a07),
         ),
     };
 
     card.render.savePNG("resources/bot-unittest-card1.png");
+
+    card.type = ItemType.dark;
+
+    card.render.savePNG("resources/bot-unittest-card2.png");
 
 }

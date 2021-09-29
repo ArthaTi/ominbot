@@ -237,6 +237,25 @@ void runCommands(Ominbot bot, Event input, string[] argv, bool admin) {
 
             break;
 
+        case "recolor item":
+        case "recolor":
+            enforce!ArgException(admin, "not admin");
+            enforce!ArgException(argv.length > 1, "argument required: item number");
+
+            import ominbot.core.image.card;
+
+            const mood = bot.emotions.get(input.targetServer, Emotions.init);
+
+            auto card = bot.db.getItem(argv[1].to!uint);
+            card.palette = ColorPalette.fromMood(mood);
+            // TODO update the item
+
+            auto output = input;
+            output.imageURL = bot.makeCardImage(card);
+            bot.eventQueue ~= output;
+
+            break;
+
         case "my items":
         case "what items do i have":
         case "what do i have":

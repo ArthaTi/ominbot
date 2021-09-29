@@ -311,11 +311,15 @@ final class Ominbot : Bot {
 
         // TODO: tags
 
+        const emotions = emotions.get(event.targetServer, Emotions.init);
+
         // Create an item card
         ItemCard card = {
 
             name: words[1..$],
             id: itemNumber,
+
+            palette: ColorPalette.fromMood(emotions)
 
         };
 
@@ -325,7 +329,7 @@ final class Ominbot : Bot {
         // TODO keep tags in origin string if updated
         words = [itemNumber.format!"%s."] ~ result.name;
 
-        return card;
+        return result;
 
     }
 
