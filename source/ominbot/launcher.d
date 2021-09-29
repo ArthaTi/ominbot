@@ -28,6 +28,12 @@ struct Event {
     /// Message Omin wants to send.
     string messageText;
 
+    /// Attached image URL, if any. Omin will save received images, and will output own images to this field.
+    /// This can be a local filesystem path, or a HTTP/HTTPS URL.
+    ///
+    /// This MUST be a PNG image.
+    string imageURL;
+
 }
 
 interface Bot {

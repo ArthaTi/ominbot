@@ -224,7 +224,7 @@ final class Ominbot : Bot {
         // Give a chance to make an image
         if (uniform01 < chance) {
 
-            output.messageText = makeImage(input);
+            output.imageURL = makeImage(input);
             return;
 
         }

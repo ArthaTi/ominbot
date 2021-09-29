@@ -12,8 +12,8 @@ public {
     debug enum responseChance = 1/5.0;
     else  enum responseChance = 1/120.0;
 
-    /// URL address for the `public/` directory where Omin will place images and data dumps.
-    debug enum publicURL = "http://localhost:8000";
+    /// Public URL address for the `public/` directory where Omin will place images and data dumps.
+    debug enum publicURL = "./public";
     else  enum publicURL = "https://omin.samerion.com";
 
 }

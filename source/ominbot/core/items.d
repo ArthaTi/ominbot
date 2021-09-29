@@ -1,3 +1,4 @@
+/// Implements
 module ominbot.core.items;
 
 import arsd.sqlite;
@@ -30,11 +31,7 @@ void prepareItems(Sqlite db) @trusted {
             tag3 TEXT NOT NULL,
 
             -- Type of the item
-            type TEXT NOT NULL,
-
-            -- Color scheme for the item
-            primary_color INTEGER NOT NULL,
-            secondary_color INTEGER NOT NULL
+            type TEXT NOT NULL
         )
 
     `);
@@ -101,20 +98,19 @@ ItemCard createItem(Sqlite db, ItemCard card) @trusted {
     scope (failure) db.query(`ROLLBACK TRANSACTION`);
 
     try db.query(
-        `INSERT INTO items(id, name, type, tag1, tag2, tag3, primary_color, secondary_color)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO items(id, name, type, tag1, tag2, tag3)
+        VALUES (?, ?, ?, ?, ?, ?)`,
        card.id, card.name.join(" "), card.type, card.tags[0], card.tags[1], card.tags[2],
-       card.backgroundColors.primary, card.backgroundColors.secondary
     );
     // TODO: add tags on insertion
 
     // Item already exists
     // TODO: update tag list
-    catch (DatabaseException) {
+    catch (DatabaseException exc) {
 
         auto result = db.query(`SELECT * FROM items WHERE id=?`, card.id);
 
-        assert(result.length == 1, "Invalid item row count after createItem SELECT query");
+        assert(result.length == 1, exc.msg.format!"Invalid item row count after createItem; SELECT query %s");
 
         // Return the found item
         return result.front.readCard();

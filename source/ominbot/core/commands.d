@@ -171,7 +171,7 @@ void runCommands(Ominbot bot, Event input, string[] argv, bool admin) {
 
             // Send a response
             auto newEvent = input;
-            newEvent.messageText = bot.makeImage(input);
+            newEvent.imageURL = bot.makeImage(input);
             bot.eventQueue ~= newEvent;
 
             break;

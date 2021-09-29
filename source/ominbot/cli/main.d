@@ -18,9 +18,13 @@ public {
     enum CSI = "\x1B\x5B";
     ulong userID = 1, serverID = 1, channelID = 1;
 
+    bool supportsImages;
+
 }
 
-void main() {
+void main(string[] argv) {
+
+    if (!loadOptions(argv)) return;
 
     OminbotLoader loader;
     string progressBuffer;
@@ -51,12 +55,54 @@ void main() {
                 CSI ~ "96m", CSI ~ "m", event.targetServer,
                 event.targetChannel,
             );
-            writeln(event.messageText);
+
+            // Text message
+            if (event.messageText.length) writeln(event.messageText);
+
+            // Uploaded image
+            if (event.imageURL.length) {
+
+                writeln(event.imageURL);
+                writeImage(event.imageURL);
+
+            }
 
         }
 
         // Read user messages
         if (!bot.readPrompt) break;
+
+    }
+
+}
+
+/// Load CLI options. If returned false, the program should quit.
+bool loadOptions(string[] argv) @trusted {
+
+    import std.getopt;
+
+    try {
+
+        // First read runtime arguments
+        auto help = argv.getopt(
+            "images|i", "Display images in the terminal.", &supportsImages
+        );
+
+        // User needs help
+        if (help.helpWanted) {
+
+            defaultGetoptPrinter("Ominbot command line interface.", help.options);
+            return false;
+
+        }
+
+        return true;
+
+    }
+    catch (Exception exc) {
+
+        writeln(exc.msg);
+        return false;
 
     }
 
@@ -169,5 +215,35 @@ void switchContext(string[] argv) {
             break;
 
     }
+
+}
+
+void writeImage(string path) @trusted {
+
+    import std.math, std.file, std.range, std.base64;
+
+    const chunkSize = 4096;
+
+    if (!supportsImages) return;
+
+    auto data = Base64.encode(cast(ubyte[]) path.read);
+    auto params = ",f=100,a=T,r=8";
+
+    auto chunked = data.chunks(chunkSize);
+
+    while (!chunked.empty) {
+
+        auto chunk = chunked.front;
+        chunked.popFront;
+
+        // Output the text
+        writef!"\x1B_Gm=%s%s;%s\x1B\\"(chunked.empty ? 0 : 1, params, chunk);
+
+        // Reset the params
+        params = null;
+
+    }
+
+    writeln;
 
 }
