@@ -211,6 +211,7 @@ void runCommands(Ominbot bot, Event input, string[] argv, bool admin) {
                 // Send a response message
                 auto output = input;
                 output.messageText = text.join(" ");
+                output.imageURL = publicURL.buildPath(itemNumber.format!"cards/card-%s.png");
                 bot.eventQueue ~= output;
 
             }

@@ -225,6 +225,7 @@ void writeImage(string path) @trusted {
     const chunkSize = 4096;
 
     if (!supportsImages) return;
+    if (!path.exists) return;
 
     auto data = Base64.encode(cast(ubyte[]) path.read);
     auto params = ",f=100,a=T";

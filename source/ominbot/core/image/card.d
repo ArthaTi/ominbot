@@ -38,8 +38,8 @@ struct ColorPalette {
         const saturation = 0.5 + emotion.intensity / 255.0 / 2;
 
         ColorPalette result = {
-            primary: hsv(angle - 10, saturation, 0.8),
-            secondary: hsv(angle + 10, saturation, 0.9),
+            primary: hsv(angle - 10, saturation, 0.9),
+            secondary: hsv(angle + 10, saturation - 0.05, 0.95),
         };
 
         return result;
