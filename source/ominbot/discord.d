@@ -76,7 +76,7 @@ class OminbotPlugin : Plugin {
 
         // Try to run commands if it's the bot owner, force send if true
         const ranCommand = event.message.author.id == BotOwner
-            && bot.runCommands(event.message.content, event.message.channel.id);
+            && bot.runCommands(this, event.message.content, event.message.channel.id);
 
         bool forceSend = ranCommand;
 
