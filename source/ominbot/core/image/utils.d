@@ -78,3 +78,69 @@ SuperImage upscale(SuperImage a, uint scale) {
     return output;
 
 }
+
+/// Downscale the given image to target size.
+SuperImage downscale(SuperImage input, uint w, uint h) @trusted {
+
+    import std.math, std.algorithm;
+
+    /// Input pixels per output pixel
+    const pixelsX = ceil(cast(float) input.width / w).to!uint;
+    const pixelsY = ceil(cast(float) input.height / h).to!uint;
+    const pixelDensity = pixelsX * pixelsY;
+
+    auto output = input.createSameFormat(w, h);
+
+    foreach (ref pixel, x, y; output) {
+
+        auto sumPixel = Color4f(0, 0, 0, 1);
+
+        foreach (iy; pixelsY*y .. pixelsY*y + pixelsY)
+        foreach (ix; pixelsX*x .. pixelsX*x + pixelsX) {
+
+            const inputPixel = input[ix, iy];
+
+            sumPixel += inputPixel;
+
+        }
+
+        pixel = sumPixel / pixelDensity;
+
+    }
+
+    return output;
+
+}
+
+/// Downscale the given image to target size, getting the maximum value for each channel.
+SuperImage downscaleMax(SuperImage input, uint w, uint h) @trusted {
+
+    import std.math, std.algorithm;
+
+    /// Input pixels per output pixel
+    const pixelsX = ceil(cast(float) input.width / w).to!uint;
+    const pixelsY = ceil(cast(float) input.height / h).to!uint;
+    const pixelDensity = pixelsX * pixelsY;
+
+    auto output = input.createSameFormat(w, h);
+
+    foreach (ref pixel, x, y; output) {
+
+        foreach (iy; pixelsY*y .. pixelsY*y + pixelsY)
+        foreach (ix; pixelsX*x .. pixelsX*x + pixelsX) {
+
+            const inputPixel = input[ix, iy];
+
+            pixel = Color4f(
+                max(pixel.r, inputPixel.r),
+                max(pixel.g, inputPixel.g),
+                max(pixel.b, inputPixel.b),
+            );
+
+        }
+
+    }
+
+    return output;
+
+}

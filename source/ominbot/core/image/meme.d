@@ -91,6 +91,7 @@ SuperImage mutilateImage(string[] top, string[] bottom, string baseImage = null)
 
 }
 
+version (none)
 unittest {
 
     mutilateImage(["abcdef?!"], ["1234567890"]);
