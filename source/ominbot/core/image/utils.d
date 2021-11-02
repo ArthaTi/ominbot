@@ -2,6 +2,7 @@ module ominbot.core.image.utils;
 
 import std.conv;
 import std.algorithm;
+import std.exception;
 
 import dlib.math;
 import dlib.image;
@@ -142,5 +143,11 @@ SuperImage downscaleMax(SuperImage input, uint w, uint h) @trusted {
     }
 
     return output;
+
+}
+
+class ImageException : Exception {
+
+    mixin basicExceptionCtors;
 
 }

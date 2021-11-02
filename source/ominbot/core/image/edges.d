@@ -17,12 +17,7 @@ import ominbot.core.image.utils;
 @safe:
 
 
-private {
-
-    enum edgeDetectionSize = 128;
-
-}
-
+enum edgeDetectionSize = 128;
 
 struct Position {
 
@@ -47,14 +42,49 @@ struct Position {
 
     }
 
+    Position opOpAssign(string op)(ref const Position other) {
+
+        import std.format;
+
+        mixin(op.format!"x %s= other.x;");
+        mixin(op.format!"y %s= other.y;");
+
+        return this;
+
+    }
+
 }
 
-struct Line {
+alias Line = const(Position)[];
 
-    Position[] points;
+Line reverse(const Line line) {
 
-    /// Direction of the line, 0..8, 0 — top, 2 — right, 4 — bottom...
-    int direction;
+    const lastPoint = line[$-1];
+
+    Line result;
+    return line.retro
+               .map!(a => a - lastPoint)
+               .array;
+
+}
+
+unittest {
+
+    Line line = [
+        Position(0, 0),
+        Position(10, 0),
+        Position(20, 0),
+        Position(20, 10)
+    ];
+
+    assert(line.reverse == [
+        Position(0, 0),
+        Position(0, -10),
+        Position(-10, -10),
+        Position(-20, -10),
+    ]);
+
+    assert(line.reverse.reverse == line);
 
 }
 
@@ -120,11 +150,11 @@ unittest {
         auto image = loadImage(path);
         auto newImage = .image(edgeDetectionSize, edgeDetectionSize);
         auto lines = findBorders!true(image)
-            .sort!("a.points.length < b.points.length");
+            .sort!("a.length < b.length");
 
         foreach (line; lines) {
 
-            newImage.drawLine(Position(), line);
+            newImage.drawLine(Position(), line, Color4f(1, 1, 1, 0.1));
 
         }
 
@@ -136,14 +166,17 @@ unittest {
 
 }
 
-void drawLine(SuperImage image, Position position, Line line) @trusted {
+void drawLine(SuperImage image, Position position, Line line, Color4f color) @trusted {
 
-    foreach (point; line.points) {
+    foreach (point; line) {
 
         auto p = position + point;
         auto previous = image[p.x, p.y];
 
-        image[p.x, p.y] = alphaOver(previous, hsv(line.direction % 4 * 90.0, 1, 1, 0.2));
+        if (p.x < 0 || p.y < 0) continue;
+        if (p.x >= image.width || p.y >= image.height) continue;
+
+        image[p.x, p.y] = alphaOver(previous, color);
 
     }
 
@@ -153,8 +186,6 @@ void drawLine(SuperImage image, Position position, Line line) @trusted {
 private Line[] findLines(bool absolutePoints = false)(SuperImage image, RedBlackTree!Position unvisited, Position start)
     @trusted
 do {
-
-    enum absolutePoints = true;
 
     enum minIntensityMult = 0.7;
     enum minIntensity = 0.25;
@@ -166,11 +197,8 @@ do {
         Position end;
         float intensity;
 
-        Position[] points = [Position(0, 0)];
+        Line line = [Position(0, 0)];
         size_t direction = 0;
-
-        // Appearance count of each direction
-        size_t[8] directionCount;
 
     }
 
@@ -211,7 +239,7 @@ do {
         // Failed to add cursors, add to result.
         scope (exit) if (!addedCursors) {
 
-            result ~= Line(cursor.points, cursor.directionCount[].maxIndex.to!int);
+            result ~= cursor.line;
 
         }
 
@@ -244,20 +272,16 @@ do {
                 const directionMult = i % 2 * 2 - 1;
                 const pointPosition = absolutePoints
                     ? position
-                    : cursor.points[$-1] + direction;
+                    : cursor.line[$-1] + direction;
                 const newDirection = (cursor.direction + directionMult*distance) % neighbors.length;
-
-                auto directionCount = cursor.directionCount;
-                directionCount[newDirection]++;
 
                 assert(directionMult == 1 || directionMult == -1);
 
                 cursors ~= Cursor(
                     position,
                     cursor.intensity/2 + intensity/2,
-                    cursor.points ~ pointPosition,
+                    cursor.line ~ pointPosition,
                     newDirection,
-                    directionCount,
                 );
                 addedCursors = true;
 
