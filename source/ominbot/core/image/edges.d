@@ -3,6 +3,7 @@ module ominbot.core.image.edges;
 
 import std.conv;
 import std.range;
+import std.traits;
 import std.algorithm;
 import std.container;
 
@@ -42,7 +43,25 @@ struct Position {
 
     }
 
-    Position opOpAssign(string op)(ref const Position other) {
+    Position opBinary(string op, T)(T other) const
+    if (isNumeric!T) {
+
+        import std.format;
+
+        return Position(
+            cast(int) mixin(op.format!"x %s other"),
+            cast(int) mixin(op.format!"y %s other"),
+        );
+
+    }
+
+    unittest {
+
+        assert(Position(3, 2) / size_t(2) == Position(1, 1));
+
+    }
+
+    Position opOpAssign(string op)(const Position other) {
 
         import std.format;
 
@@ -63,8 +82,8 @@ Line reverse(const Line line) {
 
     Line result;
     return line.retro
-               .map!(a => a - lastPoint)
-               .array;
+        .map!(a => a - lastPoint)
+        .array;
 
 }
 
@@ -85,6 +104,55 @@ unittest {
     ]);
 
     assert(line.reverse.reverse == line);
+
+}
+
+Line scaleDown(const Line line, float scale) {
+
+    const chunkCount = to!int(1/scale).max(1);
+
+    Position lastPosition;
+    Position accumulator;
+    Line result = [Position()];
+
+    foreach (chunk; line[1..$].chunks(chunkCount)) {
+
+        scope (exit) {
+
+            result ~= accumulator / chunkCount + result[$-1];
+            accumulator = Position();
+
+        }
+
+        foreach (point; chunk) {
+
+            accumulator += point - lastPosition;
+            lastPosition = point;
+
+        }
+
+    }
+
+
+    return result;
+
+}
+
+unittest {
+
+    Line line1 = [
+        Position(0, 0),
+        Position(1, 0),
+        Position(2, 0),
+        Position(2, 1),
+        Position(2, 2),
+    ];
+
+    assert(line1.scaleDown(0.5) == [
+        Position(0, 0),
+        Position(1, 0),
+        Position(1, 1),
+    ]);
 
 }
 

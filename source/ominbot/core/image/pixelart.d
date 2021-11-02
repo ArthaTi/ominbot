@@ -14,6 +14,9 @@ import ominbot.core.image.utils;
 @safe:
 
 
+enum pixelArtOutputSize = 32;
+
+
 /// Pixel art generator learning by edge detection.
 class PixelArtGenerator {
 
@@ -29,8 +32,11 @@ class PixelArtGenerator {
         // Group lines by orientation
         foreach (lineLong; lines) {
 
-            // Chunk the line if it's over 15 pixels long
-            foreach (i, line; lineLong.chunks(15).enumerate) {
+            // Scale the line down and chunk it if it's still too big
+            auto lineChunks = lineLong.scaleDown(1.0 * pixelArtOutputSize / edgeDetectionSize).chunks(15);
+
+            // Add the line
+            foreach (i, line; lineChunks.enumerate) {
 
                 const firstPoint = line[0];
 
@@ -84,12 +90,12 @@ class PixelArtGenerator {
         enforce!ImageException(entry[1].length || entry[3].length,
             key.format!"No vertical data in the image model for key '%s'");
 
-        auto output = image(edgeDetectionSize, edgeDetectionSize, 4);
+        auto output = image(pixelArtOutputSize, pixelArtOutputSize, 4);
 
         // Lay a shape
         {
 
-            auto end = Position(edgeDetectionSize/4, edgeDetectionSize/4);
+            auto end = Position(pixelArtOutputSize/4, pixelArtOutputSize/4);
 
             auto direction = 0;
 
@@ -114,10 +120,10 @@ class PixelArtGenerator {
                 output.drawLine(start, line, Color4f(1, 1, 1, 1));
 
                 direction += cast(int) direction.predSwitch(
-                    0, end.x >= edgeDetectionSize * 3 / 4,
-                    1, end.y >= edgeDetectionSize * 3 / 4,
-                    2, end.x <= edgeDetectionSize * 1 / 4,
-                    3, end.y <= edgeDetectionSize * 1 / 4,
+                    0, end.x >= pixelArtOutputSize * 3 / 4,
+                    1, end.y >= pixelArtOutputSize * 3 / 4,
+                    2, end.x <= pixelArtOutputSize * 1 / 4,
+                    3, end.y <= pixelArtOutputSize * 1 / 4,
                 );
 
             }
