@@ -24,7 +24,7 @@ struct Position {
 
     int x, y;
 
-    int opCmp(ref const Position other) const {
+    int opCmp(Position other) const {
 
         const cmpY = y - other.y;
 
@@ -32,7 +32,7 @@ struct Position {
 
     }
 
-    Position opBinary(string op)(ref const Position other) const {
+    Position opBinary(string op)(Position other) const {
 
         import std.format;
 
@@ -61,12 +61,24 @@ struct Position {
 
     }
 
-    Position opOpAssign(string op)(const Position other) {
+    Position opOpAssign(string op)(Position other) {
 
         import std.format;
 
         mixin(op.format!"x %s= other.x;");
         mixin(op.format!"y %s= other.y;");
+
+        return this;
+
+    }
+
+    Position opOpAssign(string op, T)(T other)
+    if (isNumeric!T) {
+
+        import std.format;
+
+        mixin(op.format!"x %s= other;");
+        mixin(op.format!"y %s= other;");
 
         return this;
 
@@ -234,7 +246,11 @@ unittest {
 
 }
 
-void drawLine(SuperImage image, Position position, Line line, Color4f color) @trusted {
+/// Draw a line on the given image.
+/// Returns: A list of points relative to image (0,0) that were affected.
+Line drawLine(SuperImage image, Position position, Line line, Color4f color) @trusted {
+
+    Line result;
 
     foreach (point; line) {
 
@@ -245,8 +261,11 @@ void drawLine(SuperImage image, Position position, Line line, Color4f color) @tr
         if (p.x >= image.width || p.y >= image.height) continue;
 
         image[p.x, p.y] = alphaOver(previous, color);
+        result ~= p;
 
     }
+
+    return result;
 
 }
 

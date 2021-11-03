@@ -4,8 +4,8 @@ import dlib.image;
 
 import std.format;
 import std.random;
-import std.exception;
 import std.algorithm;
+import std.exception;
 
 import ominbot.core.image.edges;
 import ominbot.core.image.utils;
@@ -14,11 +14,12 @@ import ominbot.core.image.utils;
 @safe:
 
 
-enum pixelArtOutputSize = 32;
-
 
 /// Pixel art generator learning by edge detection.
 class PixelArtGenerator {
+
+    enum outputSize = Position(102, 76);
+    enum shapeStart = outputSize/4;
 
     Line[][4][string] data;
 
@@ -33,7 +34,7 @@ class PixelArtGenerator {
         foreach (lineLong; lines) {
 
             // Scale the line down and chunk it if it's still too big
-            auto lineChunks = lineLong.scaleDown(1.0 * pixelArtOutputSize / edgeDetectionSize).chunks(15);
+            auto lineChunks = lineLong.scaleDown(1.0 * outputSize.y / edgeDetectionSize).chunks(15);
 
             // Add the line
             foreach (i, line; lineChunks.enumerate) {
@@ -79,6 +80,21 @@ class PixelArtGenerator {
 
         import std.stdio;
 
+        auto output = image(outputSize.x, outputSize.y, 4);
+
+        const corner = addShape(output, key);
+        fillShape(output, corner, color3(0xfbcb4e));
+
+        return output;
+
+    }
+
+    /// Add some shape to the given image.
+    /// Returns: Position of the third corner of the image. Used to locate image center in order to fill it.
+    Position addShape(SuperImage output, string key) {
+
+        const borderColor = (() @trusted => Color4f(1, 1, 1, 1))();
+
         auto entryPtr = key in data;
 
         enforce!ImageException(entryPtr, key.format!"No data in the image model for key '%s'");
@@ -90,48 +106,142 @@ class PixelArtGenerator {
         enforce!ImageException(entry[1].length || entry[3].length,
             key.format!"No vertical data in the image model for key '%s'");
 
-        auto output = image(pixelArtOutputSize, pixelArtOutputSize, 4);
+        Position end = shapeStart;
+        Position thirdCorner;
+        auto direction = 0;
+        auto ended = false;
 
-        // Lay a shape
-        {
+        // If the line wasn't finished after the process ended
+        scope (exit) if (!ended) () @trusted {
 
-            auto end = Position(pixelArtOutputSize/4, pixelArtOutputSize/4);
+            // Connect the ends
+            output.drawLine(borderColor, shapeStart.x, shapeStart.y, end.x, end.y);
 
-            auto direction = 0;
+        }();
 
-            // Lay lines until the shape is finished
-            while (direction < 4) {
+        // Lay lines until the shape is finished
+        while (direction < 4) {
 
-                const lineSet = entry[direction];
-                const line = lineSet.length
-                    ? entry[direction].choice
-                    : entry[(direction+2)%4].choice.reverse;
-                const start = end;
+            const lineSet = entry[direction];
+            const line = lineSet.length
+                ? entry[direction].choice
+                : entry[(direction+2)%4].choice.reverse;
 
-                end += line[$-1];
+            const drawnLine = output.drawLine(end, line, borderColor);
 
-                debug assert(direction.predSwitch(
-                    0, line[$-1].x >= 0,
-                    1, line[$-1].y >= 0,
-                    2, line[$-1].x <= 0,
-                    3, line[$-1].y <= 0,
-                ), format!"line %s has an invalid direction"(line));
+            // Check if the line ended
+            if (!ended && direction != 0) {
 
-                output.drawLine(start, line, Color4f(1, 1, 1, 1));
+                ended = drawnLine.canFind(shapeStart);
 
-                direction += cast(int) direction.predSwitch(
-                    0, end.x >= pixelArtOutputSize * 3 / 4,
-                    1, end.y >= pixelArtOutputSize * 3 / 4,
-                    2, end.x <= pixelArtOutputSize * 1 / 4,
-                    3, end.y <= pixelArtOutputSize * 1 / 4,
-                );
+            }
+
+            end += line[$-1];
+
+            debug assert(direction.predSwitch(
+                0, line[$-1].x >= 0,
+                1, line[$-1].y >= 0,
+                2, line[$-1].x <= 0,
+                3, line[$-1].y <= 0,
+            ), format!"line %s has an invalid direction"(line));
+
+            direction += cast(int) direction.predSwitch(
+                0, end.x >= outputSize.x * 3 / 4,
+                1, end.y >= outputSize.y * 3 / 4,
+                2, end.x <= outputSize.x * 1 / 4,
+                3, end.y <= outputSize.y * 1 / 4,
+            );
+
+            if (direction == 3) thirdCorner = end;
+
+        }
+
+        return thirdCorner;
+
+    }
+
+    /// Fill the shape by iterating looking for an empty pixel between first and third corner and filling everything
+    /// that can be found.
+    void fillShape(SuperImage output, Position thirdCorner, Color4f color) @trusted {
+
+        import std.container;
+
+        DList!Position queue;
+
+        // Find pixels to fill, ignore if not found
+        try queue ~= findEmpty(output, thirdCorner);
+        catch (ImageException) return;
+
+        // Run until the queue is emptied
+        while (!queue.empty) {
+
+            auto top = queue.front;
+            queue.removeFront;
+
+            // Ignore colored pixels
+            if (output[top.x, top.y].a != 0) continue;
+
+            // Draw
+            output[top.x, top.y] = color;
+
+            // Add neighbors
+            foreach (neighbor; [
+                Position(+1,  0),
+                Position( 0, +1),
+                Position(-1,  0),
+                Position( 0, -1),
+            ]) {
+
+                auto position = top + neighbor;
+
+                // Ignore if out of bounds
+                if (position.x < 0 || position.y < 0) continue;
+                if (position.x >= output.width || position.y >= output.height) continue;
+
+                queue ~= position;
 
             }
 
         }
 
+    }
 
-        return output;
+    /// Find an empty pixel in a line.
+    /// Throws: `ImageException` if not found.
+    private Position findEmpty(SuperImage output, Position thirdCorner) @trusted {
+
+        import std.math;
+
+        /// Number of pixels to be travelled
+        const incrementPer = thirdCorner / shapeStart;
+
+        // Current iterator position
+        auto position = shapeStart;
+
+        // Counter of changes per pixel
+        Position counter;
+
+        while (position != thirdCorner) {
+
+            // count the position
+            counter += 1;
+
+            // Update position
+            if (counter.x >= incrementPer.x && position.x != thirdCorner.x) {
+                position.x += sgn(thirdCorner.x - position.x);
+                counter.x = 0;
+            }
+            if (counter.y >= incrementPer.y && position.x != thirdCorner.x) {
+                position.y += sgn(thirdCorner.y - position.y);
+                counter.y = 0;
+            }
+
+            // Check if empty
+            if (output[position.x, position.y].a == 0) return position;
+
+        }
+
+        throw new ImageException("No empty pixel found in image.");
 
     }
 
