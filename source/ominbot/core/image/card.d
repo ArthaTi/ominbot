@@ -8,8 +8,12 @@ import ominbot.core.emotions;
 
 import ominbot.core.image.card;
 import ominbot.core.image.utils;
+import ominbot.core.image.edges;
 import ominbot.core.image.fonts;
+import ominbot.core.image.pixelart;
 import ominbot.core.image.resources;
+
+enum cardSize = Position(120, 180);
 
 enum ItemType {
 
@@ -91,7 +95,10 @@ struct ItemCard {
 
     ColorPalette palette;
 
-    SuperImage render() const {
+    /// Render the card.
+    /// Params:
+    ///     gen = Pixel art generator for the item icon. The icon will not be rendered if null.
+    SuperImage render(PixelArtGenerator gen = null) const {
 
         import std.string, std.typecons;
 
@@ -104,15 +111,25 @@ struct ItemCard {
         };
         ColorPalette borderColors = pickBorderColors(contentColors);
 
-        // Prepare the card image
-        auto output = combineImages(
+        // Prepare card layers: background
+        auto data = [
             ImageData(backgroundBitmap, backgroundColors),
+        ];
+
+        // Item icon, if generator was given.
+        if (gen) data ~= ImageData(cast(immutable) itemImage(gen), contentColors);
+
+        // Other layers
+        data ~= [
             ImageData(detailsBitmap,    contentColors),
             ImageData(tagsBitmap,       contentColors),
             ImageData(borderBitmap,     borderColors),
             ImageData(nameBitmap,       contentColors),
             ImageData(idBitmap,         contentColors),
-        );
+        ];
+
+        // Prepare the card image
+        auto output = combineImages(data);
 
         // Get text data for the name and strip lines if there are more than one
         const nameWidth = 102;
@@ -133,6 +150,32 @@ struct ItemCard {
 
         // Upscale the output
         return output.upscale(cardUpscale);
+
+    }
+
+    private SuperImage itemImage(PixelArtGenerator gen) const @trusted {
+
+        auto output = image(cardSize.tupleof, 4);
+        int generated = 0;
+
+        foreach (keyword; name) {
+
+            auto inner = image(gen.outputSize.tupleof, 4);
+            auto part = inner.region(0, 0, gen.outputSize.tupleof);
+
+            // Try to generate an image for this word
+            try gen.generate(inner, keyword);
+            catch (ImageException) continue;
+
+            output.addImage(part, 9, 21);
+
+            generated++;
+
+        }
+
+        // TODO: try to download data if not generated and retry
+
+        return output;
 
     }
 

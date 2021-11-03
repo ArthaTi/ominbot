@@ -75,6 +75,8 @@ final class Ominbot : Bot {
     // Models
     public {
 
+
+
         /// The relationship map model.
         RelationMap map;
 

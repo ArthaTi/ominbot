@@ -2,11 +2,13 @@ module ominbot.core.image.pixelart;
 
 import dlib.image;
 
+import std.uni;
 import std.format;
 import std.random;
 import std.algorithm;
 import std.exception;
 
+import ominbot.core.image.card;
 import ominbot.core.image.edges;
 import ominbot.core.image.utils;
 
@@ -29,6 +31,9 @@ class PixelArtGenerator {
         import std.math, std.range;
 
         Line[][4] collection;
+
+        // Make the key case-insensitive
+        key = key.toLower;
 
         // Group lines by orientation
         foreach (lineLong; lines) {
@@ -76,30 +81,26 @@ class PixelArtGenerator {
 
     /// Generate an image for given key.
     /// Throws: `ImageException` if there wasn't enough data in the model to make an image.
-    SuperImage generate(string key) @trusted {
+    void generate(SuperImage output, string key) const {
 
         import std.stdio;
 
-        auto output = image(outputSize.x, outputSize.y, 4);
-
         const corner = addShape(output, key);
-        fillShape(output, corner, color3(0xfbcb4e));
-
-        return output;
+        fillShape(output, corner, ColorPalette.init.primary);
 
     }
 
     /// Add some shape to the given image.
     /// Returns: Position of the third corner of the image. Used to locate image center in order to fill it.
-    Position addShape(SuperImage output, string key) {
+    Position addShape(SuperImage output, string key) const {
 
-        const borderColor = (() @trusted => Color4f(1, 1, 1, 1))();
+        const borderColor = ColorPalette.init.line;
 
-        auto entryPtr = key in data;
+        const entryPtr = key.toLower in data;
 
         enforce!ImageException(entryPtr, key.format!"No data in the image model for key '%s'");
 
-        auto entry = *entryPtr;
+        auto entry = cast() *entryPtr;
 
         enforce!ImageException(entry[0].length || entry[2].length,
             key.format!"No horizontal data in the image model for key '%s'");
@@ -115,7 +116,7 @@ class PixelArtGenerator {
         scope (exit) if (!ended) () @trusted {
 
             // Connect the ends
-            output.drawLine(borderColor, shapeStart.x, shapeStart.y, end.x, end.y);
+            output.drawLine(borderColor, shapeStart.tupleof, end.tupleof);
 
         }();
 
@@ -162,7 +163,7 @@ class PixelArtGenerator {
 
     /// Fill the shape by iterating looking for an empty pixel between first and third corner and filling everything
     /// that can be found.
-    void fillShape(SuperImage output, Position thirdCorner, Color4f color) @trusted {
+    void fillShape(SuperImage output, Position thirdCorner, Color4f color) @trusted const {
 
         import std.container;
 
@@ -208,7 +209,7 @@ class PixelArtGenerator {
 
     /// Find an empty pixel in a line.
     /// Throws: `ImageException` if not found.
-    private Position findEmpty(SuperImage output, Position thirdCorner) @trusted {
+    private Position findEmpty(SuperImage output, Position thirdCorner) @trusted const {
 
         import std.math;
 
@@ -237,7 +238,7 @@ class PixelArtGenerator {
             }
 
             // Check if empty
-            if (output[position.x, position.y].a == 0) return position;
+            if (output[position.tupleof].a == 0) return position;
 
         }
 
@@ -256,11 +257,24 @@ unittest {
 
         auto file = key.format!"resources/unittest-%s.png";
         auto source = loadImage(file);
+        auto output = image(PixelArtGenerator.outputSize.tupleof, 4);
 
         gen.feed(key, source.findBorders);
 
-        gen.generate(key).savePNG(key.format!"resources/bot-unittest-pixelart-%s.png");
+        gen.generate(output, key);
+        output.savePNG(key.format!"resources/bot-unittest-pixelart-%s.png");
 
     }
+
+    ItemCard card = {
+        id: 123,
+        name: ["gold", "lemon"],
+        palette: ColorPalette(
+            color3(0xfbcb4e),
+            color3(0xeeaa33),
+        )
+    };
+
+    card.render(gen).savePNG("resources/bot-unittest-pixelart-card.png");
 
 }
