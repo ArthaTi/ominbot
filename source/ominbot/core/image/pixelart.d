@@ -85,14 +85,13 @@ class PixelArtGenerator {
 
         import std.stdio;
 
-        const corner = addShape(output, key);
-        fillShape(output, corner, ColorPalette.init.primary);
+        addShape(output, key);
+        fillShape(output, ColorPalette.init.primary);
 
     }
 
     /// Add some shape to the given image.
-    /// Returns: Position of the third corner of the image. Used to locate image center in order to fill it.
-    Position addShape(SuperImage output, string key) const {
+    void addShape(SuperImage output, string key) const {
 
         const borderColor = ColorPalette.init.line;
 
@@ -108,7 +107,6 @@ class PixelArtGenerator {
             key.format!"No vertical data in the image model for key '%s'");
 
         Position end = shapeStart;
-        Position thirdCorner;
         auto direction = 0;
         auto ended = false;
 
@@ -153,24 +151,19 @@ class PixelArtGenerator {
                 3, end.y <= outputSize.y * 1 / 4,
             );
 
-            if (direction == 3) thirdCorner = end;
-
         }
-
-        return thirdCorner;
 
     }
 
-    /// Fill the shape by iterating looking for an empty pixel between first and third corner and filling everything
-    /// that can be found.
-    void fillShape(SuperImage output, Position thirdCorner, Color4f color) @trusted const {
+    /// Fill the shape rendered into the image.
+    void fillShape(SuperImage output, Color4f color) @trusted const {
 
         import std.container;
 
         DList!Position queue;
 
         // Find pixels to fill, ignore if not found
-        try queue ~= findEmpty(output, thirdCorner);
+        try queue ~= findEmpty(output);
         catch (ImageException) return;
 
         // Run until the queue is emptied
@@ -207,38 +200,35 @@ class PixelArtGenerator {
 
     }
 
-    /// Find an empty pixel in a line.
+    /// Find an empty pixel within the drawn region.
+    ///
+    /// This works by assuming the shape goes through the center (which should hold true if addShape did its job
+    /// correctly and didn't fall for some really weird lines), and finding a hollow point followed by a border pixel.
+    ///
     /// Throws: `ImageException` if not found.
-    private Position findEmpty(SuperImage output, Position thirdCorner) @trusted const {
+    private Position findEmpty(SuperImage output) @trusted const {
 
         import std.math;
 
-        /// Number of pixels to be travelled
-        const incrementPer = thirdCorner / shapeStart;
+        const x = outputSize.x / 2;
 
-        // Current iterator position
-        auto position = shapeStart;
+        bool foundBorder;
 
-        // Counter of changes per pixel
-        Position counter;
-
-        while (position != thirdCorner) {
-
-            // count the position
-            counter += 1;
-
-            // Update position
-            if (counter.x >= incrementPer.x && position.x != thirdCorner.x) {
-                position.x += sgn(thirdCorner.x - position.x);
-                counter.x = 0;
-            }
-            if (counter.y >= incrementPer.y && position.x != thirdCorner.x) {
-                position.y += sgn(thirdCorner.y - position.y);
-                counter.y = 0;
-            }
+        foreach (y; 0..outputSize.y) {
 
             // Check if empty
-            if (output[position.tupleof].a == 0) return position;
+            const empty = output[x, y].a == 0;
+
+            // Found border
+            if (foundBorder) {
+
+                // Search for empty pixels
+                if (empty) return Position(x, y);
+
+            }
+
+            // Search for filled pixels otherwise
+            else if (!empty) foundBorder = true;
 
         }
 

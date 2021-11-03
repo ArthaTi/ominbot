@@ -109,6 +109,11 @@ struct ItemCard {
             secondary: palette.primary * Color4f(0.8, 0.8, 0.8),
             background: palette.primary,
         };
+        ColorPalette imageColors = {
+            primary: contentColors.secondary,
+            secondary: contentColors.secondary * Color4f(0.8, 0.8, 0.8),
+            background: contentColors.background,
+        };
         ColorPalette borderColors = pickBorderColors(contentColors);
 
         // Prepare card layers: background
@@ -117,7 +122,7 @@ struct ItemCard {
         ];
 
         // Item icon, if generator was given.
-        if (gen) data ~= ImageData(cast(immutable) itemImage(gen), contentColors);
+        if (gen) data ~= ImageData(cast(immutable) itemImage(gen), imageColors);
 
         // Other layers
         data ~= [
