@@ -354,6 +354,31 @@ void runCommands(Ominbot bot, Event input, string[] argv, bool admin) {
 
             break;
 
+        case "learn":
+
+            enforce!ArgException(argv.length > 2, "two arguments required: <key> <file>");
+
+            auto key = argv[1];
+            auto file = argv[2];
+
+            () @trusted {
+
+                import dlib.image;
+                import ominbot.core.image.edges;
+
+                auto image = loadImage(file);
+                bot.pixelart.feed(key, image.findBorders);
+
+                const lineCount = bot.pixelart.data[key][].map!"a.length".sum;
+
+                auto output = input;
+                output.messageText = format!"Learned %s, got %s lines in model."(key, lineCount);
+                bot.eventQueue ~= output;
+
+            }();
+
+            break;
+
         default:
             throw new ArgException("unknown command");
 

@@ -16,14 +16,16 @@ import ominbot.core.params;
 import ominbot.core.structs;
 import ominbot.core.commands;
 import ominbot.core.emotions;
-import ominbot.core.image.card;
 import ominbot.core.database.items;
+
+import ominbot.core.image.card;
+import ominbot.core.image.pixelart;
 
 
 @safe:
 
-version = UseMarkov;
 
+version = UseMarkov;
 
 version (unittest) { }
 else
@@ -75,13 +77,14 @@ final class Ominbot : Bot {
     // Models
     public {
 
-
-
         /// The relationship map model.
         RelationMap map;
 
         /// Markov model.
         shared MarkovModel markov;
+
+        /// Pixel art generator model.
+        PixelArtGenerator pixelart;
 
     }
 
@@ -91,6 +94,7 @@ final class Ominbot : Bot {
 
         // Initialize fields
         this.map = new RelationMap;
+        this.pixelart = new PixelArtGenerator;
 
         // Connect to the database
         this.db = (() @trusted => new Sqlite("db.sqlite"))();
@@ -352,7 +356,7 @@ final class Ominbot : Bot {
 
         () @trusted {
 
-            card.render().savePNG(outputFile);
+            card.render(pixelart).savePNG(outputFile);
 
         }();
 
