@@ -39,6 +39,7 @@ shared static this() {
 final class Ominbot : Bot {
 
     enum corpusPath = "resources/bot-corpus.txt";
+    enum imageModelPath = "resources/bot-image-model";
 
     /// Bot data.
     public {
@@ -103,23 +104,28 @@ final class Ominbot : Bot {
         // Create samples for testing (TODO: move to unittests...?)
         debug this.db.createSamples();
 
-        // Load the model
-        version (UseMarkov) {
+        // Load models
+        loadTextModel();
+        loadImageModel();
 
-            import std.concurrency;
+    }
+
+    /// Load the currently used text model
+    private void loadTextModel() @trusted {
+
+        import std.concurrency;
+
+        // Markov
+        version (UseMarkov) {
 
             logger.loading("markov model", 0);
 
-            () @trusted {
+            // Load the Markov model in the background
+            spawn(function(shared Ominbot bot) {
 
-                // Load the Markov model in the background
-                spawn(function(shared Ominbot bot) {
+                bot.markov.feed(File(corpusPath), bot, cast() bot.logger);
 
-                    bot.markov.feed(File(corpusPath), bot, cast() bot.logger);
-
-                }, cast(shared) this);
-
-            }();
+            }, cast(shared) this);
 
         }
 
@@ -132,6 +138,41 @@ final class Ominbot : Bot {
             map.feed(map.root, corpusPath.readText);
 
         }
+
+    }
+
+    /// Load the model used for image generation.
+    private void loadImageModel() @trusted {
+
+        import std.file;
+        import rcdata.bin;
+
+        // Model isn't saved, ignore
+        if (!imageModelPath.exists()) return;
+
+        logger.loading("image generation model");
+
+        auto data = cast(ubyte[]) imageModelPath.read;
+        auto bin = rcbinParser(data);
+        auto size = bin.read!size_t;  // No portability of save files!
+
+        foreach (i; 0..size) {
+
+            auto key = bin.read!string;
+            pixelart.data[key] = bin.read!(PixelArtGenerator.Entry);
+
+        }
+
+    }
+
+    void saveImageModel() {
+
+        import std.file;
+
+        // Save image model
+        write(imageModelPath, pixelart.serialize);
+
+        writefln!"saved";
 
     }
 

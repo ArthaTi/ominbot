@@ -22,14 +22,16 @@ class PixelArtGenerator {
     enum outputSize = Position(102, 76);
     enum shapeStart = outputSize/4;
 
-    Line[][4][string] data;
+    alias Entry = Line[][4];
+
+    Entry[string] data;
 
     /// Add lines to model for the given key.
     void feed(string key, Line[] lines) {
 
         import std.math, std.range;
 
-        Line[][4] collection;
+        Entry collection;
 
         // Normalize the key
         key = normalizeKey(key);
@@ -75,6 +77,34 @@ class PixelArtGenerator {
 
         // Add the data
         else data[key] = collection;
+
+    }
+
+    /// Serialize model content.
+    ubyte[] serialize() const @trusted {
+
+        import std.array;
+        import rcdata.bin;
+
+        auto res = appender!(ubyte[]);
+        auto bin = rcbinSerializer(res);
+
+        import std.stdio;
+        writefln!"starting serialization";
+
+        bin.get(data.length);
+
+        foreach (key, value; data) {
+
+            writefln!"serializing %s"(key);
+
+            bin.get(key).get(value);
+
+        }
+
+        writefln!"done";
+
+        return res[];
 
     }
 

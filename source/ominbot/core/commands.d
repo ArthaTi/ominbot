@@ -371,6 +371,9 @@ void runCommands(Ominbot bot, Event input, string[] argv, bool admin) {
 
                 const lineCount = bot.pixelart.data[key][].map!"a.length".sum;
 
+                // Save the model
+                bot.saveImageModel();
+
                 auto output = input;
                 output.messageText = format!"Learned %s, got %s lines in model."(key, lineCount);
                 bot.eventQueue ~= output;
