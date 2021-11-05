@@ -2,7 +2,6 @@ module ominbot.core.image.pixelart;
 
 import dlib.image;
 
-import std.uni;
 import std.format;
 import std.random;
 import std.algorithm;
@@ -32,8 +31,8 @@ class PixelArtGenerator {
 
         Line[][4] collection;
 
-        // Make the key case-insensitive
-        key = key.toLower;
+        // Normalize the key
+        key = normalizeKey(key);
 
         // Group lines by orientation
         foreach (lineLong; lines) {
@@ -79,6 +78,18 @@ class PixelArtGenerator {
 
     }
 
+    /// Normalize the key, removing punctuation and making it lowercase.
+    string normalizeKey(string key) const {
+
+        import std.uni, std.conv;
+
+        return key
+            .filter!(a => a.isAlphaNum)
+            .map!(a => a.toLower)
+            .to!string;
+
+    }
+
     /// Generate an image for given key.
     /// Throws: `ImageException` if there wasn't enough data in the model to make an image.
     void generate(SuperImage output, string key) const {
@@ -95,7 +106,7 @@ class PixelArtGenerator {
 
         const borderColor = ColorPalette.init.line;
 
-        const entryPtr = key.toLower in data;
+        const entryPtr = normalizeKey(key) in data;
 
         enforce!ImageException(entryPtr, key.format!"No data in the image model for key '%s'");
 
@@ -243,9 +254,9 @@ unittest {
 
     auto gen = new PixelArtGenerator;
 
-    foreach (key; ["gold", "lemon"]) {
+    foreach (key; ["gold.", "lemon"]) {
 
-        auto file = key.format!"resources/unittest-%s.png";
+        auto file = gen.normalizeKey(key).format!"resources/unittest-%s.png";
         auto source = loadImage(file);
         auto output = image(PixelArtGenerator.outputSize.tupleof, 4);
 
@@ -255,6 +266,8 @@ unittest {
         output.savePNG(key.format!"resources/bot-unittest-pixelart-%s.png");
 
     }
+
+    assert(gen.data[gen.normalizeKey("Gold")].length > 0);
 
     ItemCard card = {
         id: 123,
